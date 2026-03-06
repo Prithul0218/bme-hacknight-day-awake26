@@ -1,0 +1,7 @@
+Financial Statements – These include the income statement, balance sheet, and cash flow statement. They contain the core financial data about revenue, expenses, assets, liabilities, and cash flow.Typical formats: XLSX, CSV, PDF.
+Annual Reports (10-K or equivalent) – These provide a full yearly overview of a company’s financial performance, business model, and risks.Typical formats: PDF, HTML.
+Quarterly Reports (10-Q) – These give updated financial results every quarter and are important for tracking recent company performance.Typical formats: PDF, HTML.
+Earnings Releases – These are short summaries of quarterly financial results, including key metrics and highlights.Typical formats: PDF, DOCX, HTML.
+Earnings Call Transcripts – These are written transcripts of calls where company executives discuss financial results and answer questions from analysts. They often contain insights about strategy and future expectations.Typical formats: TXT, DOCX, PDF.
+Investor Presentations – These are slide presentations that explain the company’s strategy, products, markets, and growth plans.Typical formats: PPTX, PDF.
+Historical Financial Data Tables – These contain structured financial data across multiple years or quarters and are commonly used for forecasting and modeling.Typical formats: CSV, XLSX.

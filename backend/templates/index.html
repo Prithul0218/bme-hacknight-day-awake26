@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinanceBuddy - AI Financial Translator</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="app-shell">
+        <header class="topbar">
+            <div class="brand-block">
+                <h1>FinanceBuddy</h1>
+                <p>Department intelligence workspace</p>
+            </div>
+            <div class="header-actions">
+                <a href="/upload" class="upload-link">📤 Upload Manager</a>
+                <div class="status-pill">Auto Feed: Live</div>
+            </div>
+        </header>
+
+        <div class="workspace-grid">
+            <aside class="panel left-panel">
+                <h2>Data Feed</h2>
+                <p class="panel-subtitle">Daily synced financial stream with exception monitoring.</p>
+
+                <div class="feed-card-list">
+                    <article class="feed-card">
+                        <div class="feed-row">
+                            <span>ERP Sync</span>
+                            <span class="ok">Healthy</span>
+                        </div>
+                        <small>Last update: 5 min ago</small>
+                    </article>
+                    <article class="feed-card">
+                        <div class="feed-row">
+                            <span>Invoice OCR</span>
+                            <span class="ok">98% Parsed</span>
+                        </div>
+                        <small>1 failed document pending review</small>
+                    </article>
+                    <article class="feed-card">
+                        <div class="feed-row">
+                            <span>Bank Feed</span>
+                            <span class="warn">Delayed</span>
+                        </div>
+                        <small>Lagging by 12 minutes</small>
+                    </article>
+                </div>
+
+                <div class="panel-block">
+                    <h3>Access Control</h3>
+                    <p>Select your role to test access permissions.</p>
+                    <label class="studio-label" for="userRole">Your Role</label>
+                    <select id="userRole" class="studio-input">
+                        <option value="employee">Employee</option>
+                        <option value="finance">Finance</option>
+                        <option value="management">Management</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+
+                <div class="panel-block">
+                    <h3>Temporary Documents</h3>
+                    <p>Add ad-hoc files for one-off analysis without changing your daily feed.</p>
+                    <div class="upload-area" id="uploadArea">
+                        <input type="file" id="fileInput" accept=".pdf,.xlsx,.xls,.csv" hidden>
+                        <button id="tempUploadBtn" class="btn-secondary" type="button">Upload Temporary Doc</button>
+                        <span class="upload-hint">PDF, Excel, CSV</span>
+                    </div>
+                    <div id="fileInfo" class="file-info hidden">
+                        <p><strong>Loaded:</strong> <span id="fileName"></span></p>
+                        <p><strong>Size:</strong> <span id="fileSize"></span></p>
+                        <label class="studio-label" for="fileClassification">Classification</label>
+                        <select id="fileClassification" class="studio-input">
+                            <option value="public_company" selected>Public Company (All Employees)</option>
+                            <option value="finance_only">Finance Only</option>
+                            <option value="management_only">Management Only</option>
+                            <option value="admin_only">Admin Only</option>
+                        </select>
+                    </div>
+                </div>
+            </aside>
+
+            <div class="resizer" id="resizerLeft" role="separator" aria-label="Resize left panel" tabindex="0"></div>
+
+            <main class="panel center-panel">
+                <div class="chat-header">
+                    <h2>Financial Chat</h2>
+                    <p>Ask free-form questions about your financial data.</p>
+                </div>
+
+                <section id="chatThread" class="chat-thread">
+                    <div class="bubble bubble-assistant">
+                        Upload a temporary document if needed, then ask any financial question. Use Studio on the right to generate shareable assets.
+                    </div>
+                </section>
+
+                <div class="department-chips">
+                    <label class="chip"><input type="checkbox" name="department" value="engineering" checked><span>Engineering</span></label>
+                    <label class="chip"><input type="checkbox" name="department" value="sales" checked><span>Sales</span></label>
+                    <label class="chip"><input type="checkbox" name="department" value="marketing" checked><span>Marketing</span></label>
+                    <label class="chip"><input type="checkbox" name="department" value="hr"><span>HR</span></label>
+                    <label class="chip"><input type="checkbox" name="department" value="operations"><span>Operations</span></label>
+                    <label class="chip"><input type="checkbox" name="department" value="executive"><span>Executive</span></label>
+                </div>
+
+                <section class="composer-wrap">
+                    <textarea id="chatPrompt" rows="2" placeholder="Ask: summarize this week for engineering, flag anomalies, compare sales vs marketing spend..."></textarea>
+                    <div class="composer-actions">
+                        <button id="chatAskBtn" class="btn-primary" type="button">Ask</button>
+                    </div>
+                </section>
+
+                <div id="loadingSection" class="loading-inline hidden">
+                    <div class="loader"></div>
+                    <span>Thinking...</span>
+                </div>
+            </main>
+
+            <div class="resizer" id="resizerRight" role="separator" aria-label="Resize right panel" tabindex="0"></div>
+
+            <aside class="panel right-panel">
+                <div class="right-header">
+                    <h2>Studio</h2>
+                    <button id="newAnalysisBtn" class="btn-secondary" type="button">Reset</button>
+                </div>
+
+                <div class="studio-controls">
+                    <label class="studio-label" for="assetType">Asset Type</label>
+                    <select id="assetType" class="studio-input">
+                        <option value="department_report">Department Report</option>
+                        <option value="executive_brief">Executive Brief</option>
+                        <option value="email_draft">Email Draft</option>
+                        <option value="infographic_outline">Infographic Outline</option>
+                        <option value="slide_outline">Slide Outline</option>
+                    </select>
+
+                    <label class="studio-label" for="studioDepartment">Target Department</label>
+                    <select id="studioDepartment" class="studio-input">
+                        <option value="">All Departments</option>
+                        <option value="engineering">Engineering</option>
+                        <option value="sales">Sales</option>
+                        <option value="marketing">Marketing</option>
+                        <option value="hr">HR</option>
+                        <option value="operations">Operations</option>
+                        <option value="executive">Executive</option>
+                    </select>
+
+                    <label class="studio-label" for="studioPrompt">Studio Prompt</label>
+                    <textarea id="studioPrompt" class="studio-input" rows="3" placeholder="Optional extra instructions, tone, audience, output style..."></textarea>
+
+                    <button id="studioGenerateBtn" class="btn-primary" type="button">Generate Asset</button>
+                </div>
+
+                <p class="panel-subtitle">Generated assets</p>
+                <div id="assetContainer" class="reports-container">
+                    <div class="empty-state">No asset yet. Use Studio controls above to generate one.</div>
+                </div>
+            </aside>
+        </div>
+
+        <div id="toast" class="toast hidden"></div>
+    </div>
+
+    <script src="/static/js/main.js"></script>
+</body>
+</html>
