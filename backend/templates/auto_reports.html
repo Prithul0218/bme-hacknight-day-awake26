@@ -19,12 +19,14 @@
                 {% if user.role != "employee" %}
                 <a href="/file-manager" class="upload-link">File Manager</a>
                 {% endif %}
-                <a href="/auto-reports" class="upload-link active">Auto Reports</a>
+
                 <a href="/alerts" class="upload-link">Alerts</a>
+                <a href="/auto-reports" class="upload-link active">Auto Reports</a>
+                
                 {% if can_manage_alerts %}
-                <button class="alert-settings-btn" onclick="alert('Alert Settings - Coming Soon')">
+                <button class="alert-settings-btn" onclick="alert('Auto Report Settings - Coming Soon')">
                     <span class="material-symbols-outlined">settings</span>
-                    Alert Settings
+                    Auto Report Settings
                 </button>
                 {% endif %}
                 <div class="user-pill">{{ user.name }}

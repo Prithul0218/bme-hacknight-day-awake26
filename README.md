@@ -80,6 +80,13 @@ Finesse uses AI to:
   - Lists (ordered and unordered)
   - Contenteditable for manual editing
 
+### 📁 File Manager & Retrieval
+- **Managed Browser** at `/file-manager` for reviewing stored files
+- **Open Document API**: View full document content with `GET /api/file/{file_id}/open`
+- **Excerpt API**: Pull short snippets with `GET /api/file/{file_id}/excerpt`
+- **Delete API**: Remove files with `DELETE /api/file/{file_id}` (role-aware)
+- **User-Scoped Listing**: `GET /api/user-files` returns files based on access level
+
 ### 💬 Chat & Analysis
 - **Three-Panel UI**: Navigation | Chat/Studio | Results
 - **Chat Mode**: Ask questions about documents
@@ -110,26 +117,28 @@ Finesse uses AI to:
 
 ---
 
-## 🚧 To-Do Features
+## 🔮 Future Possible Features
 
-### High Priority
-- [ ] End-to-end testing suite
-- [ ] Gemini OCR quota management
-- [ ] API call retry logic
+### Platform Reliability
+- End-to-end testing suite for key flows (auth, upload, alerts, chat)
+- API retry and circuit-breaker logic around external AI calls
+- Better Gemini OCR quota monitoring and fallback strategy
 
-### Medium Priority  
-- [ ] Auto-delete scheduler (7-day TTL)
-- [ ] Database integration (PostgreSQL/MongoDB)
-- [ ] File management UI (view, edit, delete)
-- [ ] Password hashing (currently plain text for demo)
+### Data & Security
+- Migrate local JSON persistence to PostgreSQL or MongoDB
+- Add password hashing (bcrypt/argon2) and optional MFA
+- Add audit logs for sensitive actions (delete, reclassification, admin actions)
 
-### Low Priority
-- [ ] Analytics dashboard
-- [ ] Batch upload
-- [ ] Document versioning
-- [ ] Export reports (PDF/Excel)
-- [ ] Collaborative features (comments, sharing)
-- [ ] Webhook notifications
+### Workflow Enhancements
+- Auto-delete scheduler for TTL-based document lifecycle policies
+- Batch upload and background processing queue
+- Document versioning and rollback support
+
+### Reporting & Integrations
+- Analytics dashboard for usage, alerts, and model performance
+- Export generated assets/reports to PDF and Excel
+- Webhook and Slack/Teams notifications for triggered alerts
+- Collaborative annotations, comments, and approval workflows
 
 ---
 
@@ -258,14 +267,21 @@ python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
 ## 📡 API Endpoints
 
 ### Upload & Processing
-- `POST /upload` - Basic document upload
-- `POST /upload-managed` - Advanced upload with options
+- `POST /api/upload` - Basic document upload
+- `POST /api/upload-managed` - Advanced upload with options
 - `POST /api/generate-summary` - Generate AI summary
 
 ### Analysis & Query
 - `POST /api/analyze` - Department-specific analysis
 - `POST /api/chat` - Chat-based Q&A
 - `POST /api/studio` - Generate content assets
+- `GET /api/reports/{file_id}` - Generate department reports for a file
+
+### File Management
+- `GET /api/user-files` - List files available to the current user
+- `GET /api/file/{file_id}/open` - Open full file content
+- `GET /api/file/{file_id}/excerpt` - Get file excerpt/snippet
+- `DELETE /api/file/{file_id}` - Delete a file (role-checked)
 
 ### Alerts
 - `GET /api/alerts` - List current configured alerts and role-filtered options
@@ -284,8 +300,10 @@ python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
 ### UI
 - `GET /` - Main application interface (requires auth)
 - `GET /upload` - Upload manager page (requires auth)
+- `GET /file-manager` - Managed file browser page (requires auth)
 - `GET /alerts` - Alert creation and configuration page (requires auth)
 - `GET /auto-reports` - Triggered alert history page (requires auth)
+- `GET /health` - Health check endpoint
 
 ---
 
@@ -368,11 +386,11 @@ python backend/test_rag.py
   - Upgrade to paid tier for higher limits
 - **Status**: Graceful fallback implemented with informative messages
 
-### 2. In-Memory Storage
-- **Issue**: All data stored in Python dictionaries
-- **Impact**: Data lost on server restart
-- **Workaround**: None currently
-- **Fix**: Migrate to PostgreSQL/MongoDB (planned)
+### 2. Local JSON Storage Limitations
+- **Issue**: Persistent data is stored in local JSON files (`backend/data/*.json`)
+- **Impact**: Works for MVP/demo, but is limited for concurrent multi-user workloads and production reliability
+- **Workaround**: Keep regular backups of the `backend/data/` directory
+- **Fix**: Migrate to PostgreSQL/MongoDB with transactional writes and migrations
 
 ### 3. Plain Text Passwords (Demo Only)
 - **Issue**: Passwords stored in plain text in users.json
@@ -382,7 +400,7 @@ python backend/test_rag.py
 
 ---
 
-## � Human-in-the-Loop Aspects
+## Human-in-the-Loop Aspects
 
 Finesse incorporates critical human oversight points to ensure accuracy and security of financial data processing:
 
@@ -486,7 +504,7 @@ When uploading high-impact financial reports, ensure:
 
 ---
 
-## �🔒 Security Considerations
+## Security Considerations
 
 - Access control enforced at API endpoint level
 - Role-based permissions for all operations

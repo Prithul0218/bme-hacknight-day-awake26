@@ -12,9 +12,9 @@
       "actual_value": 850000.0,
       "triggered_at": "2026-03-07T10:11:20.106770",
       "created_by": "alice",
-      "acknowledged": false,
-      "acknowledged_by": null,
-      "acknowledged_at": null
+      "acknowledged": true,
+      "acknowledged_by": "u_admin_001",
+      "acknowledged_at": "2026-03-07T12:17:46.653581"
     },
     {
       "trigger_id": "a20eff6c-aef0-4325-852a-f3760b6e00a8",
@@ -27,9 +27,9 @@
       "actual_value": 610000.0,
       "triggered_at": "2026-03-07T07:11:20.106770",
       "created_by": "bob",
-      "acknowledged": false,
-      "acknowledged_by": null,
-      "acknowledged_at": null
+      "acknowledged": true,
+      "acknowledged_by": "u_admin_001",
+      "acknowledged_at": "2026-03-07T12:17:47.945862"
     },
     {
       "trigger_id": "ba2166ed-aca3-471d-bea4-7ea4fc4fdc67",

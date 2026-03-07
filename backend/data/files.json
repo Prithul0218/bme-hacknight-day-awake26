@@ -56,20 +56,6 @@
       "expires_at": null,
       "uploaded_at": "2026-03-07T02:43:28.646156"
     },
-    "bf3f8bbf-8334-402b-8138-e0f077d5fa1e": {
-      "file_id": "bf3f8bbf-8334-402b-8138-e0f077d5fa1e",
-      "filename": "Engineering Company Financial Documents Generated.pdf",
-      "file_type": ".pdf",
-      "size": 49643,
-      "classification": "admin_only",
-      "uploaded_by": "u_admin_001",
-      "file_path": "uploads/bf3f8bbf-8334-402b-8138-e0f077d5fa1e_Engineering Company Financial Documents Generated.pdf",
-      "ai_summary": "Apex Bridge & Infrastructure Group Balance Sheet",
-      "file_type_category": "permanent",
-      "is_permanent": true,
-      "expires_at": null,
-      "uploaded_at": "2026-03-07T02:54:16.928422"
-    },
     "b7328289-90d9-46d1-b991-a38d27727ef8": {
       "file_id": "b7328289-90d9-46d1-b991-a38d27727ef8",
       "filename": "Engineering Company Financial Documents Generated - Mar 2026",
@@ -83,20 +69,6 @@
       "is_permanent": true,
       "expires_at": null,
       "uploaded_at": "2026-03-07T02:54:33.479580"
-    },
-    "fc6aa909-d2df-4597-bfde-3dc399c6d7ec": {
-      "file_id": "fc6aa909-d2df-4597-bfde-3dc399c6d7ec",
-      "filename": "Engineering Company Financial Documents Generated.pdf",
-      "file_type": ".pdf",
-      "size": 49643,
-      "classification": "public_company",
-      "uploaded_by": "u_admin_001",
-      "file_path": "uploads/fc6aa909-d2df-4597-bfde-3dc399c6d7ec_Engineering Company Financial Documents Generated.pdf",
-      "ai_summary": "Apex Bridge & Infrastructure Group Balance Sheet",
-      "file_type_category": "permanent",
-      "is_permanent": true,
-      "expires_at": null,
-      "uploaded_at": "2026-03-07T08:36:45.299173"
     },
     "1d894087-5b30-4c6e-8b13-d5135bae3df6": {
       "file_id": "1d894087-5b30-4c6e-8b13-d5135bae3df6",
