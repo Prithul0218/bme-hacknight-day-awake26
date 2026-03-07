@@ -66,12 +66,14 @@ FinanceBuddy uses AI to:
 
 ### 📤 Upload Manager
 - **Advanced Interface** at `/upload`:
+  - **Access Control**: Restricted to Finance, Management, and Admin users only
   - Drag-and-drop file upload
   - Auto-generated document titles
-  - Access level selector
+  - Auto-assigned access level (based on user role)
   - Storage modes: Full Document or AI Summary Only
   - Auto-delete option (7-day TTL)
   - Real-time AI summary generation
+  - **Public Upload Confirmation**: Confirms intent when uploading as public_company
 - **Rich Markdown Editor**:
   - Bold, italic, inline code
   - Tables with pipe syntax
@@ -101,7 +103,6 @@ FinanceBuddy uses AI to:
 ## 🚧 To-Do Features
 
 ### High Priority
-- [ ] Upload page access control (Finance/Management/Admin only)
 - [ ] End-to-end testing suite
 - [ ] Gemini OCR quota management
 - [ ] API call retry logic

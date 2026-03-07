@@ -6,7 +6,10 @@ from fastapi.responses import RedirectResponse
 from dotenv import load_dotenv
 import os
 from backend.services.auth_service import ensure_users_db, authenticate_user, get_user_by_id, sanitize_user
-from backend.services.access_control import get_default_classification_for_role
+from backend.services.access_control import (
+    get_default_classification_for_role,
+    get_assignable_classifications_for_role,
+)
 from backend.models.schemas import Role
 
 # Load environment variables
@@ -134,19 +137,37 @@ async def home(request: Request):
 
 @app.get("/upload")
 async def upload_manager(request: Request):
-    """Upload manager page for document uploads"""
+    """Upload manager page for document uploads (Finance/Management/Admin only)"""
     auth_or_redirect = _require_user_or_redirect(request)
     if isinstance(auth_or_redirect, RedirectResponse):
         return auth_or_redirect
 
     user = auth_or_redirect
-    default_classification = get_default_classification_for_role(Role(user["role"])).value
+    user_role = Role(user["role"])
+    
+    # Restrict upload access to Finance, Management, and Admin only
+    if user_role not in [Role.FINANCE, Role.MANAGEMENT, Role.ADMIN]:
+        return templates.TemplateResponse(
+            "access_denied.html",
+            {
+                "request": request,
+                "user": user,
+                "message": "Upload access is restricted to Finance, Management, and Admin users only."
+            },
+            status_code=403
+        )
+    
+    default_classification = get_default_classification_for_role(user_role).value
+    allowed_classifications = [
+        classification.value for classification in get_assignable_classifications_for_role(user_role)
+    ]
     return templates.TemplateResponse(
         "upload.html",
         {
             "request": request,
             "user": user,
             "default_classification": default_classification,
+            "allowed_classifications": allowed_classifications,
         },
     )
 

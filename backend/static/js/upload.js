@@ -21,12 +21,10 @@ function initializeUploadForm() {
     const uploadAnotherBtn = document.getElementById('uploadAnotherBtn');
     const summaryRendered = document.getElementById('documentSummaryRendered');
     const summarySource = document.getElementById('documentSummary');
-    const accessLevelDisplay = document.getElementById('accessLevelDisplay');
-    const accessLevelHidden = document.getElementById('accessLevel');
+    const accessLevelSelect = document.getElementById('accessLevel');
 
-    if (accessLevelDisplay && accessLevelHidden) {
-        accessLevelHidden.value = defaultClassification;
-        accessLevelDisplay.value = formatClassificationLabel(defaultClassification);
+    if (accessLevelSelect) {
+        accessLevelSelect.value = defaultClassification;
     }
 
     // File input change
@@ -111,7 +109,8 @@ async function generateSummary(regenerate = false) {
         const formData = new FormData();
         formData.append('file', currentFile);
 
-        const uploadResponse = await fetch(`/api/upload?classification=${encodeURIComponent(defaultClassification)}`, {
+        const selectedClassification = document.getElementById('accessLevel').value || defaultClassification;
+        const uploadResponse = await fetch(`/api/upload?classification=${encodeURIComponent(selectedClassification)}`, {
             method: 'POST',
             body: formData
         });
@@ -174,6 +173,48 @@ async function handleUpload() {
         alert('Please generate or enter a summary');
         return;
     }
+
+    // Show confirmation modal if uploading as public
+    if (accessLevel === 'public_company') {
+        showPublicConfirmModal(() => performUpload(title, accessLevel, storageMode, autoDelete, summary));
+        return;
+    }
+
+    // Proceed with upload
+    await performUpload(title, accessLevel, storageMode, autoDelete, summary);
+}
+
+function showPublicConfirmModal(onConfirm) {
+    const modal = document.getElementById('publicConfirmModal');
+    const confirmBtn = document.getElementById('confirmPublicUpload');
+    const cancelBtn = document.getElementById('cancelPublicUpload');
+    const overlay = modal.querySelector('.modal-overlay');
+
+    modal.classList.remove('hidden');
+
+    const handleConfirm = () => {
+        modal.classList.add('hidden');
+        cleanup();
+        onConfirm();
+    };
+
+    const handleCancel = () => {
+        modal.classList.add('hidden');
+        cleanup();
+    };
+
+    const cleanup = () => {
+        confirmBtn.removeEventListener('click', handleConfirm);
+        cancelBtn.removeEventListener('click', handleCancel);
+        overlay.removeEventListener('click', handleCancel);
+    };
+
+    confirmBtn.addEventListener('click', handleConfirm);
+    cancelBtn.addEventListener('click', handleCancel);
+    overlay.addEventListener('click', handleCancel);
+}
+
+async function performUpload(title, accessLevel, storageMode, autoDelete, summary) {
 
     // Show progress
     const uploadBtn = document.getElementById('uploadBtn');
@@ -244,8 +285,7 @@ function resetForm() {
     const uploadDetails = document.querySelector('.upload-details');
     const fileInput = document.getElementById('documentFile');
     const titleInput = document.getElementById('documentTitle');
-    const accessLevelHidden = document.getElementById('accessLevel');
-    const accessLevelDisplay = document.getElementById('accessLevelDisplay');
+    const accessLevelSelect = document.getElementById('accessLevel');
     const storageModeSelect = document.getElementById('storageMode');
     const autoDeleteCheckbox = document.getElementById('autoDelete');
     const summarySection = document.querySelector('.summary-section');
@@ -257,8 +297,7 @@ function resetForm() {
 
     fileInput.value = '';
     titleInput.value = '';
-    accessLevelHidden.value = defaultClassification;
-    accessLevelDisplay.value = formatClassificationLabel(defaultClassification);
+    accessLevelSelect.value = defaultClassification;
     storageModeSelect.selectedIndex = 0;
     autoDeleteCheckbox.checked = false;
     summaryText.value = '';
@@ -289,13 +328,6 @@ function formatFileSize(bytes) {
     if (bytes < 1024) return bytes + ' B';
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-}
-
-function formatClassificationLabel(value) {
-    if (value === 'admin_only') return 'Admin Only';
-    if (value === 'management_only') return 'Management Only';
-    if (value === 'finance_only') return 'Finance Department Only';
-    return 'Public Company - All Employees';
 }
 
 function escapeHtml(text) {

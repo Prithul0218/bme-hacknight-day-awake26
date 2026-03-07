@@ -44,9 +44,21 @@
 
                     <div class="form-group">
                         <label>Access Level</label>
-                        <input type="text" id="accessLevelDisplay" readonly>
-                        <input type="hidden" id="accessLevel" value="{{ default_classification }}">
-                        <p class="field-hint">Automatically chosen from your login role</p>
+                        <select id="accessLevel">
+                            {% if "public_company" in allowed_classifications %}
+                            <option value="public_company">Public Company - All Employees</option>
+                            {% endif %}
+                            {% if "finance_only" in allowed_classifications %}
+                            <option value="finance_only">Finance Department Only</option>
+                            {% endif %}
+                            {% if "management_only" in allowed_classifications %}
+                            <option value="management_only">Management Only</option>
+                            {% endif %}
+                            {% if "admin_only" in allowed_classifications %}
+                            <option value="admin_only">Admin Only</option>
+                            {% endif %}
+                        </select>
+                        <p class="field-hint">Auto-selected from your role, but you can change it</p>
                     </div>
 
                     <div class="form-group">
@@ -97,6 +109,25 @@
                         <button type="button" id="uploadAnotherBtn" class="btn btn-link">Upload Another Document</button>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Public Upload Confirmation Modal -->
+    <div id="publicConfirmModal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚠️ Confirm Public Upload</h2>
+            </div>
+            <div class="modal-body">
+                <p>You are about to upload this document with <strong>Public Company</strong> access level.</p>
+                <p>This means <strong>ALL employees</strong> in the company will be able to view and access this document.</p>
+                <p>Are you sure you want to proceed?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="confirmPublicUpload" class="btn btn-primary">Yes, Upload as Public</button>
+                <button type="button" id="cancelPublicUpload" class="btn btn-secondary">Cancel</button>
             </div>
         </div>
     </div>

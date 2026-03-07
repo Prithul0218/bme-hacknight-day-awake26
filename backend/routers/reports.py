@@ -17,6 +17,7 @@ from backend.services.report_generator import ReportGenerator
 from backend.services.rag_service import rag_service
 from backend.services.access_control import (
     can_user_access_file,
+    can_user_assign_classification,
     get_accessible_user_context,
     build_user_from_context,
     get_default_classification_for_role,
@@ -106,8 +107,27 @@ async def upload_document(
             detail=f"File type not supported. Allowed types: {', '.join(allowed_extensions)}"
         )
     
-    # Automatically assign classification from logged-in role.
+    # Auto-select classification from role, but allow explicit override from UI.
     file_classification = get_default_classification_for_role(current_user.role)
+    if classification:
+        try:
+            requested_classification = FileClassification(classification)
+        except ValueError:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid classification. Must be one of: public_company, finance_only, management_only, admin_only",
+            )
+
+        if not can_user_assign_classification(current_user.role, requested_classification):
+            raise HTTPException(
+                status_code=403,
+                detail=(
+                    f"Access denied: Your role ({current_user.role.value}) cannot upload files "
+                    f"with {requested_classification.value} classification"
+                ),
+            )
+
+        file_classification = requested_classification
     
     # Generate unique file ID
     file_id = str(uuid.uuid4())
@@ -403,8 +423,27 @@ async def upload_managed_document(
             detail=f"File type not supported. Allowed types: {', '.join(allowed_extensions)}"
         )
     
-    # Automatically assign classification from logged-in role.
+    # Auto-select classification from role, but allow explicit override from UI.
     file_classification = get_default_classification_for_role(current_user.role)
+    if classification:
+        try:
+            requested_classification = FileClassification(classification)
+        except ValueError:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid classification. Must be one of: public_company, finance_only, management_only, admin_only",
+            )
+
+        if not can_user_assign_classification(current_user.role, requested_classification):
+            raise HTTPException(
+                status_code=403,
+                detail=(
+                    f"Access denied: Your role ({current_user.role.value}) cannot upload files "
+                    f"with {requested_classification.value} classification"
+                ),
+            )
+
+        file_classification = requested_classification
     
     # Validate storage mode
     if storage_mode not in ["full", "summary"]:

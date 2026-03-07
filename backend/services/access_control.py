@@ -92,6 +92,35 @@ def get_default_classification_for_role(role: Role) -> FileClassification:
     return FileClassification.PUBLIC_COMPANY
 
 
+def can_user_assign_classification(user_role: Role, classification: FileClassification) -> bool:
+    """Whether a role is allowed to upload a file with a given classification."""
+    if user_role == Role.ADMIN:
+        return True
+
+    if user_role == Role.MANAGEMENT:
+        return classification in [
+            FileClassification.PUBLIC_COMPANY,
+            FileClassification.MANAGEMENT_ONLY,
+        ]
+
+    if user_role == Role.FINANCE:
+        return classification in [
+            FileClassification.PUBLIC_COMPANY,
+            FileClassification.FINANCE_ONLY,
+        ]
+
+    return classification == FileClassification.PUBLIC_COMPANY
+
+
+def get_assignable_classifications_for_role(user_role: Role) -> list[FileClassification]:
+    """Return upload classifications a role is allowed to assign."""
+    return [
+        classification
+        for classification in FileClassification
+        if can_user_assign_classification(user_role, classification)
+    ]
+
+
 def build_user_from_context(user_context: dict) -> User:
     """
     Constructs a User object from context dictionary.

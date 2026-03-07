@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Access Denied - FinanceBuddy</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0b0b0b;
+            color: #f7f4f2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .access-denied-container {
+            max-width: 600px;
+            text-align: center;
+        }
+
+        .icon {
+            font-size: 5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 0 0 1rem 0;
+            color: #f7f4f2;
+        }
+
+        .message {
+            font-size: 1.2rem;
+            color: #b4aeaa;
+            margin: 0 0 2rem 0;
+            line-height: 1.6;
+        }
+
+        .user-info {
+            background: #131313;
+            border: 1px solid #252425;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            color: #b4aeaa;
+        }
+
+        .user-info strong {
+            color: #fe742e;
+        }
+
+        .back-link {
+            display: inline-block;
+            color: #fe742e;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.75rem 2rem;
+            border: 1px solid rgba(254, 116, 46, 0.3);
+            border-radius: 6px;
+            transition: all 0.2s;
+            font-size: 1rem;
+        }
+
+        .back-link:hover {
+            background: rgba(254, 116, 46, 0.1);
+            border-color: #fe742e;
+            transform: translateY(-2px);
+        }
+
+        .logout-link {
+            margin-left: 1rem;
+            color: #b4aeaa;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .logout-link:hover {
+            color: #f7f4f2;
+        }
+    </style>
+</head>
+<body>
+    <div class="access-denied-container">
+        <div class="icon">🚫</div>
+        <h1>Access Denied</h1>
+        <p class="message">{{ message }}</p>
+        
+        <div class="user-info">
+            Logged in as <strong>{{ user.name }}</strong> ({{ user.role }})
+        </div>
+
+        <a href="/" class="back-link">← Back to Workspace</a>
+        <a href="/logout" class="logout-link">Logout</a>
+    </div>
+</body>
+</html>
