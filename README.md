@@ -1,4 +1,4 @@
-# FinanceBuddy 🤖💰
+# Finesse 🤖💰
 
 **AI-powered financial document management and analysis platform** that converts complex financial reports into department-specific insights with intelligent access control, semantic search, and automated OCR.
 
@@ -6,7 +6,7 @@
 Finance reports are written in finance language for finance people. Other departments struggle to extract what matters to THEM. Additionally, managing sensitive financial documents requires proper access control and efficient retrieval systems.
 
 ## 💡 The Solution
-FinanceBuddy uses AI to:
+Finesse uses AI to:
 - **Translate** financial documents into department-tailored insights
 - **Secure** documents with role-based access control (4 permission levels)
 - **Search** semantically using RAG (Retrieval Augmented Generation)
@@ -36,10 +36,10 @@ FinanceBuddy uses AI to:
 #### Demo User Accounts (All passwords: `1234`)
 | Email | Role | Auto-Classification | Access Level |
 |-------|------|---------------------|-------------|
-| admin@financebuddy.local | Admin | admin_only | Full access to all documents |
-| management@financebuddy.local | Management | management_only | Management & public docs |
-| finance@financebuddy.local | Finance | finance_only | Finance & public docs |
-| employee@financebuddy.local | Employee | public_company | Public docs only |
+| admin@finesse.local | Admin | admin_only | Full access to all documents |
+| management@finesse.local | Management | management_only | Management & public docs |
+| finance@finesse.local | Finance | finance_only | Finance & public docs |
+| employee@finesse.local | Employee | public_company | Public docs only |
 
 ### 🔐 Access Control System
 - **4-Level Classification**:
@@ -83,8 +83,17 @@ FinanceBuddy uses AI to:
 ### 💬 Chat & Analysis
 - **Three-Panel UI**: Navigation | Chat/Studio | Results
 - **Chat Mode**: Ask questions about documents
-- **Studio Mode**: Generate briefs, emails, outlines, summaries
+- **Studio Mode**: Generate briefs, emails, summaries, and infographic visuals
+- **Infographic Assets**: Gemini-generated SVG infographic previews with download support
 - **Department Focus**: Tailored responses per department
+
+### 🚨 Alerts & History
+- **Quick Alert Creation**: Template-first alert setup at `/alerts`
+- **Simplified Alert Controls**: Visual severity/channel selectors and compact advanced options
+- **Alert History Dashboard**: `/auto-reports` now shows triggered-alert history (not scheduled report cards)
+- **Priority-First Sorting**: High-priority alerts are always listed first, then newest by timestamp
+- **Acknowledge Workflow**: Every unacknowledged alert includes an `Acknowledge` action
+- **Role-Aware Settings UI**: `Alert Settings` placeholder button visible only for `admin` and `management`
 
 ### 🤖 AI Features
 - **Department Reports**: Automated analysis per department
@@ -97,6 +106,7 @@ FinanceBuddy uses AI to:
 - **Responsive Design**: Clean professional interface
 - **Real-Time Updates**: Progress indicators
 - **Drag-and-Drop**: Intuitive file uploads
+- **Consistent Icons**: Material Symbols Outlined across app pages
 
 ---
 
@@ -203,10 +213,10 @@ python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
 1. Navigate to http://localhost:8000
 2. You'll be redirected to http://localhost:8000/login
 3. Enter one of the demo emails:
-   - `admin@financebuddy.local` (full access)
-   - `management@financebuddy.local` (management + public)
-   - `finance@financebuddy.local` (finance + public)
-   - `employee@financebuddy.local` (public only)
+   - `admin@finesse.local` (full access)
+   - `management@finesse.local` (management + public)
+   - `finance@finesse.local` (finance + public)
+   - `employee@finesse.local` (public only)
 4. Enter password: `1234`
 5. Click "Sign In"
 
@@ -232,10 +242,16 @@ python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
 ### Generate Reports
 1. Select document
 2. Switch to "Studio" mode
-3. Choose asset type (Brief, Email, Outline, Summary)
+3. Choose asset type (Brief, Email, Summary, Infographic)
 4. Select department
 5. Add custom prompt (optional)
 6. Click "Generate"
+
+### Manage Alert History
+1. Open http://localhost:8000/auto-reports
+2. Review triggered alerts sorted by severity and date
+3. Use `Acknowledge` on active alerts to mark them handled
+4. If logged in as `admin` or `management`, use `Alert Settings` (placeholder)
 
 ---
 
@@ -251,6 +267,14 @@ python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
 - `POST /api/chat` - Chat-based Q&A
 - `POST /api/studio` - Generate content assets
 
+### Alerts
+- `GET /api/alerts` - List current configured alerts and role-filtered options
+- `POST /api/alerts` - Create a quick alert
+- `PATCH /api/alerts/{alert_id}` - Pause/activate an alert
+- `DELETE /api/alerts/{alert_id}` - Delete an alert
+- `GET /api/triggered-alerts` - Get triggered-alert history
+- `POST /api/triggered-alerts/{trigger_id}/acknowledge` - Acknowledge a triggered alert
+
 ### Authentication
 - `GET /login` - Login page
 - `POST /login` - Login form submission
@@ -260,6 +284,8 @@ python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
 ### UI
 - `GET /` - Main application interface (requires auth)
 - `GET /upload` - Upload manager page (requires auth)
+- `GET /alerts` - Alert creation and configuration page (requires auth)
+- `GET /auto-reports` - Triggered alert history page (requires auth)
 
 ---
 
@@ -275,25 +301,36 @@ bme-hacknight-day-awake26/
 │   │   ├── document_processor.py    # Multi-format processing
 │   │   ├── rag_service.py           # Semantic search & embeddings
 │   │   ├── report_generator.py      # Department reports
+│   │   ├── auto_report_service.py   # Auto report scheduling utilities
+│   │   ├── alerts_storage_service.py# Alert and trigger persistence
 │   │   ├── access_control.py        # Permission enforcement
 │   │   └── auth_service.py          # User authentication & sessions
 │   ├── data/
-│   │   └── users.json               # User database (demo accounts)
+│   │   ├── users.json               # User database (demo accounts)
+│   │   ├── alerts.json              # Alert definitions and trigger history
+│   │   └── auto_reports.json        # Auto report data store
 │   ├── models/
 │   │   └── schemas.py               # Pydantic models
 │   ├── prompts/
 │   │   └── templates.py             # Centralized AI prompts
 │   ├── templates/
 │   │   ├── index.html               # Main interface
+│   │   ├── alerts.html              # Alert configuration UI
+│   │   ├── auto_reports.html        # Alert history UI
+│   │   ├── file_manager.html        # Managed file browser
 │   │   ├── upload.html              # Upload manager
 │   │   └── login.html               # Login page
 │   └── static/
 │       ├── css/
 │       │   ├── style.css            # Main styles
+│       │   ├── alerts.css           # Alerts page styles
+│       │   ├── auto_reports.css     # Alert history page styles
 │       │   ├── upload.css           # Upload page styles
 │       │   └── login.css            # Login page styles
 │       └── js/
-│           ├── main.js               # Main app logic
+│           ├── main.js              # Main app logic
+│           ├── alerts.js            # Alerts page interactions
+│           ├── auto_reports.js      # Alert history acknowledge actions
 │           └── upload.js            # Upload page logic
 ├── uploads/                         # Uploaded documents storage
 ├── requirements.txt                 # Python dependencies
@@ -347,7 +384,7 @@ python backend/test_rag.py
 
 ## � Human-in-the-Loop Aspects
 
-FinanceBuddy incorporates critical human oversight points to ensure accuracy and security of financial data processing:
+Finesse incorporates critical human oversight points to ensure accuracy and security of financial data processing:
 
 ### 📋 OCR Review Workflow
 **Why it's needed**: Gemini Vision API OCR can misread scanned PDFs, especially with:
@@ -425,19 +462,18 @@ FinanceBuddy incorporates critical human oversight points to ensure accuracy and
 **Why it's needed**: Tailored summarization can miss domain context
 
 **Current Safeguards**:
-- ✅ Multi-department report generation (auto-reports)
-- ⚠️ **Audience requires validation**: Each department head should review first auto-report to confirm relevance
-- ⚠️ **Frequency tuning needed**: Default 7-day cadence may not fit all departments
+- ✅ Multi-department Studio generation for tailored outputs
+- ✅ Triggered alert history available for operational follow-up
+- ⚠️ **Audience requires validation**: Department leads should review generated insights for relevance
 
 **Recommended Process**:
-1. Finance team generates first auto-reports for each role
+1. Finance team generates first department-specific outputs in Studio
 2. Each department head reviews relevance and accuracy
 3. Provide feedback on:
    - Which metrics matter most
    - Missing context or misinterpretations
-   - Too frequent/infrequent delivery
-4. Adjust `report_frequency_days` in settings (future UI planning)
-5. Refine prompts for domain-specific accuracy
+   - Missing alert conditions or thresholds
+4. Refine prompts and alert templates based on that feedback
 
 ### ✅ Checklist for Critical Documents
 When uploading high-impact financial reports, ensure:

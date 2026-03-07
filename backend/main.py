@@ -11,6 +11,7 @@ from backend.services.access_control import (
     get_assignable_classifications_for_role,
 )
 from backend.services.auto_report_service import start_scheduler, stop_scheduler, get_reports_for_user
+from backend.services.alerts_storage_service import list_triggered_alerts
 from backend.models.schemas import Role
 
 # Load environment variables
@@ -18,7 +19,7 @@ load_dotenv()
 
 # Initialize FastAPI app
 app = FastAPI(
-    title="FinanceBuddy",
+    title="Finesse",
     description="AI-powered financial document translator for departments",
     version="1.0.0"
 )
@@ -217,22 +218,28 @@ async def file_manager(request: Request):
 
 @app.get("/auto-reports")
 async def auto_reports_page(request: Request):
-    """View scheduled auto-generated reports for the current user."""
+    """View triggered alert history for the current user."""
     auth_or_redirect = _require_user_or_redirect(request)
     if isinstance(auth_or_redirect, RedirectResponse):
         return auth_or_redirect
 
     user = auth_or_redirect
-    reports = get_reports_for_user(user)
-    frequency_days = int(user.get("report_frequency_days", 7) or 7)
+    user_role = user.get("role", "employee")
+    user_id = user.get("user_id", "")
+    
+    # Get triggered alerts history instead of scheduled reports
+    triggered_alerts = list_triggered_alerts(user_id, user_role)
+    
+    # Check if user can see alert settings (admin or management)
+    can_manage_alerts = user_role in ["admin", "management"]
 
     return templates.TemplateResponse(
         "auto_reports.html",
         {
             "request": request,
             "user": user,
-            "reports": reports,
-            "frequency_days": frequency_days,
+            "triggered_alerts": triggered_alerts,
+            "can_manage_alerts": can_manage_alerts,
         },
     )
 
@@ -259,7 +266,7 @@ async def health_check():
     """Health check endpoint"""
     return {
         "status": "healthy",
-        "app": os.getenv("APP_NAME", "FinanceBuddy"),
+        "app": os.getenv("APP_NAME", "Finesse"),
         "gemini_configured": bool(os.getenv("GEMINI_API_KEY"))
     }
 

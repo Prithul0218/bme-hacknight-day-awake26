@@ -47,6 +47,8 @@ from backend.services.alerts_storage_service import (
     update_alert_status,
     delete_alert,
     list_recent_triggers,
+    list_triggered_alerts,
+    acknowledge_triggered_alert,
 )
 import os
 import mimetypes
@@ -1171,3 +1173,38 @@ async def remove_alert(request_http: Request, alert_id: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to delete alert: {str(e)}")
+
+
+@router.get("/triggered-alerts")
+async def get_triggered_alerts(request: Request):
+    """Get triggered alert history for the current user"""
+    try:
+        user_context = get_accessible_user_context(request)
+        current_user = build_user_from_context(user_context)
+        
+        triggered_alerts = list_triggered_alerts(current_user.user_id, current_user.role.value)
+        
+        return {"triggered_alerts": triggered_alerts}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch triggered alerts: {str(e)}")
+
+
+@router.post("/triggered-alerts/{trigger_id}/acknowledge")
+async def acknowledge_alert(request: Request, trigger_id: str):
+    """Acknowledge a triggered alert"""
+    try:
+        user_context = get_accessible_user_context(request)
+        current_user = build_user_from_context(user_context)
+        
+        result = acknowledge_triggered_alert(trigger_id, current_user.user_id)
+        
+        if not result:
+            raise HTTPException(status_code=404, detail="Triggered alert not found")
+        
+        return {"success": True, "trigger": result}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to acknowledge alert: {str(e)}")

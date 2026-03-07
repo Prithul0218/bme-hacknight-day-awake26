@@ -1,0 +1,80 @@
+{
+  "alerts": {},
+  "triggers": [
+    {
+      "trigger_id": "e7c7c9b3-918a-4836-bc41-7bcb82dc6b5c",
+      "alert_id": null,
+      "alert_name": "Revenue Drop Alert",
+      "severity": "high",
+      "message": "Monthly revenue has dropped by 15% below the threshold",
+      "metric": "revenue",
+      "threshold_value": 1000000.0,
+      "actual_value": 850000.0,
+      "triggered_at": "2026-03-07T10:11:20.106770",
+      "created_by": "alice",
+      "acknowledged": false,
+      "acknowledged_by": null,
+      "acknowledged_at": null
+    },
+    {
+      "trigger_id": "a20eff6c-aef0-4325-852a-f3760b6e00a8",
+      "alert_id": null,
+      "alert_name": "Operating Expense Spike",
+      "severity": "high",
+      "message": "Operating expenses exceeded threshold by 22%",
+      "metric": "operating_expense",
+      "threshold_value": 500000.0,
+      "actual_value": 610000.0,
+      "triggered_at": "2026-03-07T07:11:20.106770",
+      "created_by": "bob",
+      "acknowledged": false,
+      "acknowledged_by": null,
+      "acknowledged_at": null
+    },
+    {
+      "trigger_id": "ba2166ed-aca3-471d-bea4-7ea4fc4fdc67",
+      "alert_id": null,
+      "alert_name": "Budget Variance Warning",
+      "severity": "medium",
+      "message": "Marketing department budget variance is at 8%",
+      "metric": "budget_variance_percent",
+      "threshold_value": 5.0,
+      "actual_value": 8.2,
+      "triggered_at": "2026-03-06T09:11:20.106770",
+      "created_by": "charlie",
+      "acknowledged": true,
+      "acknowledged_by": "charlie",
+      "acknowledged_at": "2026-03-06T11:11:20.106770"
+    },
+    {
+      "trigger_id": "260504bf-7954-4307-97c4-089f8ea409a7",
+      "alert_id": null,
+      "alert_name": "Low Cash Balance",
+      "severity": "medium",
+      "message": "Cash balance fell below $200k threshold",
+      "metric": "cash_balance",
+      "threshold_value": 200000.0,
+      "actual_value": 185000.0,
+      "triggered_at": "2026-03-05T12:11:20.106770",
+      "created_by": "alice",
+      "acknowledged": false,
+      "acknowledged_by": null,
+      "acknowledged_at": null
+    },
+    {
+      "trigger_id": "0279bcca-ec7c-42a7-980f-eaa238dde835",
+      "alert_id": null,
+      "alert_name": "Department Spend Notice",
+      "severity": "low",
+      "message": "IT department spending is approaching monthly limit",
+      "metric": "department_spend",
+      "threshold_value": 50000.0,
+      "actual_value": 48500.0,
+      "triggered_at": "2026-03-04T12:11:20.106770",
+      "created_by": "bob",
+      "acknowledged": true,
+      "acknowledged_by": "admin",
+      "acknowledged_at": "2026-03-04T16:11:20.106770"
+    }
+  ]
+}

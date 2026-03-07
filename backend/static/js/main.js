@@ -540,8 +540,14 @@ function openGeneratedAssetModal(assetId) {
             </div>
             ${captionHtml}
         `;
+        if (studioAssetShareBtn) {
+            studioAssetShareBtn.textContent = 'Download';
+        }
     } else {
         studioAssetViewContent.innerHTML = parseMarkdown(asset.content || '');
+        if (studioAssetShareBtn) {
+            studioAssetShareBtn.textContent = 'Share';
+        }
     }
 
     // Render citations if present
@@ -620,6 +626,21 @@ if (studioAssetDeleteBtn) {
 }
 if (studioAssetShareBtn) {
     studioAssetShareBtn.addEventListener('click', () => {
+        const asset = selectedGeneratedAssetId
+            ? generatedStudioAssets.find((item) => item._id === selectedGeneratedAssetId)
+            : null;
+
+        if (asset && asset.image_data_url) {
+            const link = document.createElement('a');
+            link.href = asset.image_data_url;
+            link.download = `${(asset.title || 'infographic').replace(/\s+/g, '_').toLowerCase()}.svg`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            showNotification('Infographic downloaded.', 'success');
+            return;
+        }
+
         showNotification('Share will be enabled soon.', 'info');
     });
 }

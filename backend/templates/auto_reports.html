@@ -3,57 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Auto Reports - FinanceBuddy</title>
+    <title>Alert History - Finesse</title>
     <link rel="stylesheet" href="/static/css/auto_reports.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
 </head>
 <body>
-    <div class="reports-shell">
-        <header class="reports-header">
-            <div>
-                <h1>Auto Generated Reports</h1>
-                <p>Scheduled insights for {{ user.name }} ({{ user.role }})</p>
-                <p class="cadence">Current cadence: every {{ frequency_days }} day(s)</p>
+    <div class="app-shell">
+        <header class="topbar">
+            <div class="brand-block">
+                <h1>Finesse</h1>
+                <p>Alert History & Notifications</p>
             </div>
             <div class="header-actions">
-                <a href="/" class="btn-link">Back to Workspace</a>
-                <a href="/logout" class="btn-link secondary">Logout</a>
+                <a href="/" class="upload-link">Dashboard</a>
+                {% if user.role != "employee" %}
+                <a href="/file-manager" class="upload-link">File Manager</a>
+                {% endif %}
+                <a href="/auto-reports" class="upload-link active">Auto Reports</a>
+                <a href="/alerts" class="upload-link">Alerts</a>
+                {% if can_manage_alerts %}
+                <button class="alert-settings-btn" onclick="alert('Alert Settings - Coming Soon')">
+                    <span class="material-symbols-outlined">settings</span>
+                    Alert Settings
+                </button>
+                {% endif %}
+                <div class="user-pill">{{ user.name }}
+                    <a href="/logout" class="logout-link">Logout</a>
+                </div>
             </div>
         </header>
 
-        {% if reports and reports|length > 0 %}
-        <section class="report-list">
-            {% for report in reports %}
-            <article class="report-card">
-                <div class="report-top">
-                    <h2>{{ report.title }}</h2>
-                    <span class="audience">Audience: {{ report.audience }}</span>
-                </div>
-                <p class="summary">{{ report.summary }}</p>
+        <main class="alert-history-main">
+            <div class="page-header">
+                <h2>Alert History</h2>
+                <p class="subtitle">View and manage triggered alerts</p>
+            </div>
 
-                {% if report.highlights and report.highlights|length > 0 %}
-                <ul class="highlights">
-                    {% for item in report.highlights %}
-                    <li>{{ item }}</li>
-                    {% endfor %}
-                </ul>
-                {% endif %}
+            {% if triggered_alerts and triggered_alerts|length > 0 %}
+            <section class="alerts-list">
+                {% for alert in triggered_alerts %}
+                <article class="alert-card {{ alert.severity }}" data-trigger-id="{{ alert.trigger_id }}">
+                    <div class="alert-header">
+                        <div class="alert-icon-wrapper {{ alert.severity }}">
+                            {% if alert.severity == "high" %}
+                            <span class="material-symbols-outlined">report</span>
+                            {% elif alert.severity == "medium" %}
+                            <span class="material-symbols-outlined">error</span>
+                            {% else %}
+                            <span class="material-symbols-outlined">info</span>
+                            {% endif %}
+                        </div>
+                        <div class="alert-main-info">
+                            <h3 class="alert-name">{{ alert.alert_name }}</h3>
+                            <p class="alert-message">{{ alert.message }}</p>
+                        </div>
+                        <div class="alert-severity-badge {{ alert.severity }}">
+                            {{ alert.severity|upper }}
+                        </div>
+                    </div>
 
-                <div class="meta-grid">
-                    <div><strong>Generated:</strong> {{ report.generated_at }}</div>
-                    <div><strong>Next Due:</strong> {{ report.next_due_at }}</div>
-                    <div><strong>Frequency:</strong> {{ report.frequency_days }} day(s)</div>
-                    <div><strong>User:</strong> {{ report.user_name }}</div>
-                </div>
-            </article>
-            {% endfor %}
-        </section>
-        {% else %}
-        <section class="empty-state">
-            <h2>No reports yet</h2>
-            <p>The scheduler will generate reports automatically based on your configured cadence.</p>
-        </section>
-        {% endif %}
+                    <div class="alert-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Metric:</span>
+                            <span class="detail-value">{{ alert.metric }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Threshold:</span>
+                            <span class="detail-value">{{ alert.threshold_value }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Actual:</span>
+                            <span class="detail-value">{{ alert.actual_value }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Triggered:</span>
+                            <span class="detail-value">{{ alert.triggered_at }}</span>
+                        </div>
+                    </div>
+
+                    <div class="alert-actions">
+                        {% if alert.acknowledged %}
+                        <div class="acknowledged-status">
+                            <span class="material-symbols-outlined">check_circle</span>
+                            <span>Acknowledged by {{ alert.acknowledged_by }} at {{ alert.acknowledged_at }}</span>
+                        </div>
+                        {% else %}
+                        <button class="acknowledge-btn" data-trigger-id="{{ alert.trigger_id }}">
+                            <span class="material-symbols-outlined">done</span>
+                            Acknowledge
+                        </button>
+                        {% endif %}
+                    </div>
+                </article>
+                {% endfor %}
+            </section>
+            {% else %}
+            <section class="empty-state">
+                <span class="material-symbols-outlined empty-icon">notifications_off</span>
+                <h2>No alerts yet</h2>
+                <p>When alerts are triggered, they'll appear here for review.</p>
+                <a href="/alerts" class="create-alert-link">Create Alert</a>
+            </section>
+            {% endif %}
+        </main>
     </div>
+
+    <script src="/static/js/auto_reports.js"></script>
 </body>
 </html>

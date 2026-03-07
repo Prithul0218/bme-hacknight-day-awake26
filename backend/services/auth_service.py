@@ -9,7 +9,7 @@ SEED_USERS = [
     {
         "user_id": "u_admin_001",
         "name": "Admin User",
-        "email": "admin@financebuddy.local",
+        "email": "admin@finesse.local",
         "password": "1234",
         "role": "admin",
         "department": None,
@@ -19,7 +19,7 @@ SEED_USERS = [
     {
         "user_id": "u_mgmt_001",
         "name": "Management User",
-        "email": "management@financebuddy.local",
+        "email": "management@finesse.local",
         "password": "1234",
         "role": "management",
         "department": None,
@@ -29,7 +29,7 @@ SEED_USERS = [
     {
         "user_id": "u_fin_001",
         "name": "Finance User",
-        "email": "finance@financebuddy.local",
+        "email": "finance@finesse.local",
         "password": "1234",
         "role": "finance",
         "department": None,
@@ -39,7 +39,7 @@ SEED_USERS = [
     {
         "user_id": "u_emp_001",
         "name": "Employee User",
-        "email": "employee@financebuddy.local",
+        "email": "employee@finesse.local",
         "password": "1234",
         "role": "employee",
         "department": "engineering",
