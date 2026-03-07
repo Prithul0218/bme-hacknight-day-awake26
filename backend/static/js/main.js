@@ -1,5 +1,6 @@
 // State
 let uploadedFiles = [];
+let availablePermanentFiles = [];  // Files from file manager
 let userRole = window.currentUserRole || 'employee';
 let defaultClassification = window.defaultClassification || 'public_company';
 
@@ -10,7 +11,6 @@ const tempUploadBtn = document.getElementById('tempUploadBtn');
 const fileInfo = document.getElementById('fileInfo');
 const fileCount = document.getElementById('fileCount');
 const fileList = document.getElementById('fileList');
-const fileClassificationText = document.getElementById('fileClassification');
 
 const chatThread = document.getElementById('chatThread');
 const chatPrompt = document.getElementById('chatPrompt');
@@ -28,9 +28,30 @@ const workspaceGrid = document.querySelector('.workspace-grid');
 const resizerLeft = document.getElementById('resizerLeft');
 const resizerRight = document.getElementById('resizerRight');
 
-if (fileClassificationText) {
-    fileClassificationText.textContent = defaultClassification;
+// Load available permanent files on page load
+async function fetchAvailablePermanentFiles() {
+    try {
+        const response = await fetch('/api/user-files');
+        if (response.ok) {
+            const data = await response.json();
+            availablePermanentFiles = data.files || [];
+            uploadedFiles = (data.temporary_files || []).map((item) => ({
+                file_id: item.file_id,
+                name: item.filename,
+                size: item.size || 0,
+                ai_title: item.ai_title || item.ai_summary || item.filename || '—',
+            }));
+            updateLoadedFilesUI();  // Refresh UI to show available files
+        }
+    } catch (error) {
+        console.warn('Could not fetch available files:', error);
+    }
 }
+
+// Call on page load
+document.addEventListener('DOMContentLoaded', () => {
+    fetchAvailablePermanentFiles();
+});
 
 // Upload interactions
 fileInput.addEventListener('change', handleFileSelect);
@@ -56,8 +77,26 @@ uploadArea.addEventListener('drop', (e) => {
     }
 });
 
+function normalizeSelectedFiles(selectedFiles) {
+    if (!selectedFiles) {
+        return fileInput.files;
+    }
+
+    // Input change event
+    if (selectedFiles.target && selectedFiles.target.files) {
+        return selectedFiles.target.files;
+    }
+
+    // Drag/drop FileList
+    if (typeof selectedFiles.length === 'number') {
+        return selectedFiles;
+    }
+
+    return fileInput.files;
+}
+
 async function handleFileSelect(selectedFiles = null) {
-    const files = selectedFiles || fileInput.files;
+    const files = normalizeSelectedFiles(selectedFiles);
     if (!files || files.length === 0) {
         return;
     }
@@ -80,7 +119,7 @@ async function uploadFile(file) {
     const classification = defaultClassification;
 
     try {
-        const response = await fetch(`/api/upload?classification=${encodeURIComponent(classification)}`, {
+        const response = await fetch(`/api/upload?classification=${encodeURIComponent(classification)}&temporary=true`, {
             method: 'POST',
             body: formData,
         });
@@ -95,10 +134,10 @@ async function uploadFile(file) {
             file_id: data.file_id,
             name: file.name,
             size: file.size,
-            classification,
+            ai_title: data.ai_title || file.name,
         });
         updateLoadedFilesUI();
-        showNotification(`Document uploaded as ${classification.replace(/_/g, ' ')} classification.`, 'success');
+        showNotification('Temporary document uploaded.', 'success');
     } catch (error) {
         console.error('Upload error:', error);
         showNotification('Upload failed. ' + (error.message || 'Please try again.'), 'error');
@@ -108,7 +147,11 @@ async function uploadFile(file) {
 function updateLoadedFilesUI() {
     if (!fileInfo || !fileCount || !fileList) return;
 
-    if (uploadedFiles.length === 0) {
+    const tempCount = uploadedFiles.length;
+    const permCount = availablePermanentFiles.length;
+    const totalCount = tempCount + permCount;
+
+    if (totalCount === 0) {
         fileInfo.classList.add('hidden');
         fileCount.textContent = '0';
         fileList.innerHTML = '';
@@ -116,12 +159,97 @@ function updateLoadedFilesUI() {
     }
 
     fileInfo.classList.remove('hidden');
-    fileCount.textContent = String(uploadedFiles.length);
-    fileList.innerHTML = uploadedFiles
-        .map(
-            (item) => `<li>${item.name} <span class="temp-file-meta">(${formatFileSize(item.size)})</span></li>`
-        )
-        .join('');
+    fileCount.textContent = String(totalCount);
+    
+    let html = '';
+
+    // Company managed files (permanent)
+    html += '<li style="font-weight: 600; color: #7eb3dc; margin-bottom: 8px;">Company Managed Files (' + permCount + ')</li>';
+    if (permCount > 0) {
+        html += availablePermanentFiles
+            .map(
+                (item) => {
+                    const aiTitle = item.ai_title || item.ai_summary || '—';
+                    return `
+                        <li class="doc-item-row" style="padding-left: 8px; margin-bottom: 4px;">
+                            <button type="button" class="doc-open-btn" data-file-id="${item.file_id}" title="Open file" style="all: unset; cursor: pointer; color: #bbb; font-size: 13px;">
+                                ${aiTitle}
+                            </button>
+                        </li>
+                    `;
+                }
+            )
+            .join('');
+    } else {
+        html += '<li style="padding-left: 8px; color: #777; font-size: 12px; margin-bottom: 8px;">No company managed files.</li>';
+    }
+
+    // Temporary files
+    html += '<li style="font-weight: 600; color: #fe742e; margin-top: 10px; margin-bottom: 8px;">Temporary Files (' + tempCount + ')</li>';
+    if (tempCount > 0) {
+        html += uploadedFiles
+            .map(
+                (item) => {
+                    const aiTitle = item.ai_title || item.name || '—';
+                    return `
+                        <li class="doc-item-row" style="padding-left: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px;">
+                            <button type="button" class="doc-open-btn" data-file-id="${item.file_id}" title="Open file" style="all: unset; cursor: pointer; color: #ddd; flex: 1;">
+                                ${aiTitle}
+                            </button>
+                            <button type="button" class="temp-delete-btn" data-file-id="${item.file_id}" title="Remove temporary file" style="border: none; background: transparent; color: #ff8a8a; font-size: 14px; cursor: pointer;">x</button>
+                        </li>
+                    `;
+                }
+            )
+            .join('');
+    } else {
+        html += '<li style="padding-left: 8px; color: #777; font-size: 12px;">No temporary files.</li>';
+    }
+    
+    fileList.innerHTML = html;
+}
+
+if (fileList) {
+    fileList.addEventListener('click', async (event) => {
+        const deleteBtn = event.target.closest('.temp-delete-btn');
+        if (deleteBtn) {
+            event.preventDefault();
+            const fileId = deleteBtn.getAttribute('data-file-id');
+            if (fileId) {
+                await deleteTemporaryFile(fileId);
+            }
+            return;
+        }
+
+        const openBtn = event.target.closest('.doc-open-btn');
+        if (openBtn) {
+            event.preventDefault();
+            const fileId = openBtn.getAttribute('data-file-id');
+            if (fileId) {
+                window.open(`/api/file/${encodeURIComponent(fileId)}/open`, '_blank', 'noopener');
+            }
+        }
+    });
+}
+
+async function deleteTemporaryFile(fileId) {
+    try {
+        const response = await fetch(`/api/file/${encodeURIComponent(fileId)}`, {
+            method: 'DELETE',
+        });
+
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.detail || 'Delete failed');
+        }
+
+        uploadedFiles = uploadedFiles.filter((f) => f.file_id !== fileId);
+        updateLoadedFilesUI();
+        showNotification('Temporary file removed.', 'success');
+    } catch (error) {
+        console.error('Delete error:', error);
+        showNotification(error.message || 'Could not remove temporary file.', 'error');
+    }
 }
 
 // Chat interactions
@@ -142,13 +270,18 @@ chatAskBtn.addEventListener('click', async () => {
     chatAskBtn.disabled = true;
 
     try {
+        // Combine temporary and permanent file IDs
+        const tempFileIds = uploadedFiles.map((f) => f.file_id);
+        const permFileIds = availablePermanentFiles.map((f) => f.file_id);
+        const allFileIds = [...tempFileIds, ...permFileIds];
+        
         const response = await fetch('/api/chat', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                file_ids: uploadedFiles.map((f) => f.file_id),
+                file_ids: allFileIds,
                 question,
                 departments: selectedDepts,
             }),
@@ -311,10 +444,6 @@ newAnalysisBtn.addEventListener('click', () => {
     updateLoadedFilesUI();
     chatPrompt.value = '';
     studioPrompt.value = '';
-    if (fileClassificationText) {
-        fileClassificationText.textContent = defaultClassification;
-    }
-
     document.querySelectorAll('input[name="department"]').forEach((cb) => {
         cb.checked = ['engineering', 'sales', 'marketing'].includes(cb.value);
     });

@@ -32,14 +32,14 @@ body {
 }
 
 .topbar {
-    background: linear-gradient(140deg, #121212, #1f1c1b);
+    /* background: linear-gradient(140deg, #121212, #1f1c1b);
     border: 1px solid var(--border);
-    border-radius: 16px;
+    border-radius: 16px; */
     padding: 1rem 1.2rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1rem;
+    margin-bottom: 0.1rem;
 }
 
 .brand-block h1 {
@@ -101,8 +101,8 @@ body {
 
 .logout-link {
     color: #ffb996;
-    border: 1px solid rgba(255, 185, 150, 0.28);
-    border-radius: 8px;
+    /* border: 1px solid rgba(255, 185, 150, 0.28); */
+    /* border-radius: 8px; */
     text-decoration: none;
     padding: 0.38rem 0.7rem;
     font-size: 0.84rem;
@@ -110,8 +110,8 @@ body {
 
 .logout-link:hover {
     color: #ffd4bf;
-    border-color: rgba(255, 185, 150, 0.5);
-    background: rgba(255, 185, 150, 0.08);
+    /* border-color: rgba(255, 185, 150, 0.5); */
+    /* background: rgba(255, 185, 150, 0.08); */
 }
 
 .workspace-grid {
@@ -205,10 +205,11 @@ body {
 }
 
 .upload-area {
-    border: 1px dashed #4a3a31;
+    /* border: 1px dashed #4a3a31; */
     border-radius: 12px;
     background: #171514;
-    padding: 0.8rem;
+    /* padding: 0.8rem; */
+    margin-top: 0.8rem;
     display: grid;
     gap: 0.45rem;
 }

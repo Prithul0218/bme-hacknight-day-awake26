@@ -14,18 +14,21 @@
                 <p>Department intelligence workspace</p>
             </div>
             <div class="header-actions">
-                <a href="/upload" class="upload-link">📤 Upload Manager</a>
+                {% if user.role != "employee" %}
+                <a href="/file-manager" class="upload-link">📁 File Manager</a>
+                {% endif %}
                 <a href="/auto-reports" class="upload-link">🗓️ Auto Reports</a>
-                <div class="status-pill">Auto Feed: Live</div>
-                <div class="user-pill">{{ user.name }} ({{ user.role }})</div>
-                <a href="/logout" class="logout-link">Logout</a>
+                <!-- <div class="status-pill">Auto Feed: Live</div> -->
+                <!-- <div class="user-pill">{{ user.name }} ({{ user.role }})</div> -->
+                <div class="user-pill">{{ user.name }} 
+                <a href="/logout" class="logout-link">Logout</a></div>
             </div>
         </header>
 
         <div class="workspace-grid">
             <aside class="panel left-panel">
-                <h2>Data Feed</h2>
-                <p class="panel-subtitle">Daily synced financial stream with exception monitoring.</p>
+                <!-- <h2>Data Feed</h2> -->
+                <!-- <p class="panel-subtitle">Daily synced financial stream with exception monitoring.</p> -->
 
                 <div class="feed-card-list">
                     <article class="feed-card">
@@ -51,27 +54,26 @@
                     </article>
                 </div>
 
-                <div class="panel-block">
+                <!-- <div class="panel-block">
                     <h3>Access Control</h3>
                     <p>Your role is set by login. Document access level is assigned automatically.</p>
                     <div class="file-info">
                         <p><strong>Current Role:</strong> <span id="currentRole">{{ user.role }}</span></p>
-                        <!-- <p><strong>Auto Classification:</strong> <span id="autoClassification">{{ default_classification }}</span></p> -->
+                        <p><strong>Auto Classification:</strong> <span id="autoClassification">{{ default_classification }}</span></p>
                     </div>
-                </div>
+                </div> -->
 
                 <div class="panel-block">
-                    <h3>Temporary Documents</h3>
-                    <p>Add ad-hoc files for one-off analysis without changing your daily feed.</p>
-                    <div class="upload-area" id="uploadArea">
-                        <input type="file" id="fileInput" accept=".pdf,.xlsx,.xls,.csv" multiple hidden>
-                        <button id="tempUploadBtn" class="btn-secondary" type="button">Upload Temporary Docs</button>
-                        <span class="upload-hint">PDF, Excel, CSV</span>
-                    </div>
+                    <h3>Documents</h3>
+                    <!-- <p>Loaded documents and temporary uploads for this workspace.</p> -->
                     <div id="fileInfo" class="file-info hidden">
                         <p><strong>Loaded:</strong> <span id="fileCount">0</span> document(s)</p>
                         <ul id="fileList" class="temp-file-list"></ul>
-                        <p><strong>Classification:</strong> <span id="fileClassification">{{ default_classification }}</span> (auto from role)</p>
+                    </div>
+                    <div class="upload-area" id="uploadArea">
+                        <input type="file" id="fileInput" accept=".pdf,.xlsx,.xls,.csv" multiple hidden>
+                        <button id="tempUploadBtn" class="btn-secondary" type="button">Upload Temporary Docs</button>
+                        <!-- <span class="upload-hint">PDF, Excel, CSV</span> -->
                     </div>
                 </div>
             </aside>

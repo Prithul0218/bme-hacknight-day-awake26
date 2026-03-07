@@ -49,6 +49,10 @@ app.include_router(reports.router, prefix="/api", tags=["reports"])
 
 @app.on_event("startup")
 async def on_startup():
+    # Load files from JSON database on startup
+    from backend.routers.reports import load_files_from_json
+    load_files_from_json()
+    
     # Run report generation every hour; each user is generated only when due.
     start_scheduler(interval_seconds=3600)
 
@@ -148,8 +152,14 @@ async def home(request: Request):
     )
 
 @app.get("/upload")
-async def upload_manager(request: Request):
-    """Upload manager page for document uploads (Finance/Management/Admin only)"""
+async def upload_redirect():
+    """Redirect legacy /upload route to /file-manager"""
+    return RedirectResponse(url="/file-manager", status_code=301)
+
+
+@app.get("/file-manager")
+async def file_manager(request: Request):
+    """File manager page for viewing, managing, and uploading documents (Finance/Management/Admin only)"""
     auth_or_redirect = _require_user_or_redirect(request)
     if isinstance(auth_or_redirect, RedirectResponse):
         return auth_or_redirect
@@ -157,29 +167,50 @@ async def upload_manager(request: Request):
     user = auth_or_redirect
     user_role = Role(user["role"])
     
-    # Restrict upload access to Finance, Management, and Admin only
+    # Restrict file manager access to Finance, Management, and Admin only
     if user_role not in [Role.FINANCE, Role.MANAGEMENT, Role.ADMIN]:
         return templates.TemplateResponse(
             "access_denied.html",
             {
                 "request": request,
                 "user": user,
-                "message": "Upload access is restricted to Finance, Management, and Admin users only."
+                "message": "File manager access is restricted to Finance, Management, and Admin users only."
             },
             status_code=403
         )
+    
+    # Get list of files uploaded by current user from JSON database
+    from backend.services.file_storage_service import get_user_files
+    user_files_data = get_user_files(user["user_id"])
+    
+    # Format for template
+    user_files = []
+    for file_info in user_files_data:
+        if file_info.get("file_type_category") == "temporary":
+            continue
+        user_files.append({
+            "file_id": file_info.get("file_id"),
+            "filename": file_info.get("filename"),
+            "file_type": file_info.get("file_type"),
+            "size": file_info.get("size"),
+            "classification": file_info.get("classification"),
+            "uploaded_at": file_info.get("uploaded_at"),
+            "ai_title": file_info.get("ai_summary", ""),
+            "ai_summary": file_info.get("ai_summary", ""),
+        })
     
     default_classification = get_default_classification_for_role(user_role).value
     allowed_classifications = [
         classification.value for classification in get_assignable_classifications_for_role(user_role)
     ]
     return templates.TemplateResponse(
-        "upload.html",
+        "file_manager.html",
         {
             "request": request,
             "user": user,
             "default_classification": default_classification,
             "allowed_classifications": allowed_classifications,
+            "user_files": user_files,
         },
     )
 

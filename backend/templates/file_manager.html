@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Manager - FinanceBuddy</title>
+    <link rel="stylesheet" href="/static/css/upload.css">
+    <style>
+        .file-manager-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .manager-section {
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #fe742e;
+            color: #fff;
+        }
+
+        .files-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #1a1a1a;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .files-table thead {
+            background: #262626;
+        }
+
+        .files-table th {
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #fe742e;
+            border-bottom: 1px solid #333;
+        }
+
+        .files-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #333;
+            color: #ccc;
+        }
+
+        .files-table tbody tr:hover {
+            background: #252525;
+        }
+
+        .file-name-col {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .file-icon-small {
+            font-size: 16px;
+        }
+
+        .classification-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-public {
+            background: #1a3a1a;
+            color: #7ec97e;
+        }
+
+        .badge-finance {
+            background: #2a1a3a;
+            color: #b57edc;
+        }
+
+        .badge-management {
+            background: #3a2a1a;
+            color: #dca67e;
+        }
+
+        .badge-admin {
+            background: #3a1a1a;
+            color: #dc6e6e;
+        }
+
+        .file-size-col {
+            text-align: right;
+            font-family: monospace;
+            color: #999;
+        }
+
+        .file-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-delete {
+            padding: 6px 12px;
+            background: #8b0000;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.2s;
+        }
+
+        .btn-delete:hover {
+            background: #b00000;
+        }
+
+        .empty-state {
+            padding: 40px;
+            text-align: center;
+            color: #999;
+            background: #1a1a1a;
+            border-radius: 8px;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .delete-confirmation-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .delete-confirmation-modal.show {
+            display: flex;
+        }
+
+        .delete-confirmation-content {
+            background: #1a1a1a;
+            padding: 30px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            max-width: 400px;
+        }
+
+        .delete-confirmation-content h3 {
+            color: #fe742e;
+            margin-bottom: 15px;
+        }
+
+        .delete-confirmation-content p {
+            color: #ccc;
+            margin-bottom: 20px;
+        }
+
+        .delete-confirmation-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .btn-confirm-delete {
+            padding: 8px 16px;
+            background: #8b0000;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-confirm-delete:hover {
+            background: #b00000;
+        }
+
+        .btn-cancel-delete {
+            padding: 8px 16px;
+            background: #333;
+            color: #ccc;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-cancel-delete:hover {
+            background: #444;
+        }
+    </style>
+</head>
+<body>
+    <div class="file-manager-container">
+        <header class="upload-header">
+            <h1>📁 File Manager</h1>
+            <p class="upload-subtitle">Manage your documents and upload new files</p>
+            <p class="upload-subtitle">Logged in as {{ user.name }} ({{ user.role }})</p>
+            <div style="margin-top: 15px;">
+                <a href="/" class="back-link">← Back to Workspace</a>
+                <a href="/logout" class="back-link" style="margin-left: 15px;">Logout</a>
+            </div>
+        </header>
+
+        <!-- Existing Files Section -->
+        <div class="manager-section">
+            <h2 class="section-title">📑 Your Documents ({{ user_files|length }})</h2>
+            
+            {% if user_files %}
+            <table class="files-table">
+                <thead>
+                    <tr>
+                        <th>Filename</th>
+                        <th>AI Title</th>
+                        <th>Access Level</th>
+                        <th style="text-align: right;">Size</th>
+                        <th style="text-align: right;">Uploaded</th>
+                        <th style="text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="filesTableBody">
+                    {% for file in user_files %}
+                    <tr data-file-id="{{ file.file_id }}">
+                        <td>
+                            <div class="file-name-col">
+                                <span class="file-icon-small">📄</span>
+                                <span>{{ file.filename }}</span>
+                            </div>
+                        </td>
+                        <td style="font-size: 12px; max-width: 250px; color: #bbb;">
+                            <em>{{ file.ai_title if file.ai_title else file.ai_summary if file.ai_summary else "—" }}</em>
+                        </td>
+                        <td>
+                            <span class="classification-badge badge-{% if file.classification == 'public_company' %}public{% elif file.classification == 'finance_only' %}finance{% elif file.classification == 'management_only' %}management{% else %}admin{% endif %}">
+                                {{ file.classification.replace('_', ' ').title() }}
+                            </span>
+                        </td>
+                        <td class="file-size-col">{{ (file.size / 1024) | round(1) }} KB</td>
+                        <td style="text-align: right; color: #999; font-size: 12px;">
+                            {{ file.uploaded_at[:10] }}
+                        </td>
+                        <td style="text-align: right;">
+                            <div class="file-actions">
+                                <button class="btn-delete delete-file-btn" data-file-id="{{ file.file_id }}">Delete</button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">📭</div>
+                <p>No documents yet. Add your first file below!</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Add New File Section -->
+        <div class="manager-section">
+            <h2 class="section-title">➕ Add New File</h2>
+            
+            <div class="upload-form-wrapper">
+                <div class="upload-card">
+                    <div class="upload-area">
+                        <input type="file" id="documentFile" accept=".pdf,.xlsx,.xls,.csv" class="file-input">
+                        <label for="documentFile" class="upload-trigger">
+                            <span class="upload-icon">📄</span>
+                            <span class="upload-text">Click to upload or drag file here</span>
+                            <span class="upload-hint">PDF, Excel, or CSV files</span>
+                        </label>
+                    </div>
+
+                    <div class="upload-details hidden">
+                        <div class="file-preview">
+                            <span class="file-icon">📄</span>
+                            <div class="file-info">
+                                <p class="file-name"></p>
+                                <p class="file-size"></p>
+                            </div>
+                            <button type="button" class="btn-remove" title="Remove file">×</button>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Document Title</label>
+                            <input type="text" id="documentTitle" placeholder="Auto-generated from filename">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Access Level</label>
+                            <select id="accessLevel">
+                                {% if "public_company" in allowed_classifications %}
+                                <option value="public_company">Public Company - All Employees</option>
+                                {% endif %}
+                                {% if "finance_only" in allowed_classifications %}
+                                <option value="finance_only">Finance Department Only</option>
+                                {% endif %}
+                                {% if "management_only" in allowed_classifications %}
+                                <option value="management_only">Management Only</option>
+                                {% endif %}
+                                {% if "admin_only" in allowed_classifications %}
+                                <option value="admin_only">Admin Only</option>
+                                {% endif %}
+                            </select>
+                            <p class="field-hint">Auto-selected from your role, but you can change it</p>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Storage Mode</label>
+                            <select id="storageMode">
+                                <option value="full">Keep Full Document</option>
+                                <option value="summary">Keep AI Summary Only</option>
+                            </select>
+                            <p class="field-hint">Full document or AI-generated summary</p>
+                        </div>
+
+                        <div class="summary-section hidden">
+                            <div class="summary-header">
+                                <label>AI Generated Summary</label>
+                                <button type="button" class="btn-regenerate">🔄 Regenerate</button>
+                            </div>
+                            <div class="summary-loading hidden">
+                                <div class="spinner"></div>
+                                <span>Generating summary...</span>
+                            </div>
+                            <textarea id="documentSummary" class="summary-source hidden" rows="8" placeholder="AI will generate a summary..."></textarea>
+                            <div id="documentSummaryRendered" class="summary-rendered" contenteditable="true" aria-label="AI generated summary editor"></div>
+                            <p class="field-hint">Review and edit the summary before uploading</p>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="autoDelete">
+                                <span>Auto-delete after 7 days</span>
+                            </label>
+                        </div>
+
+                        <div class="upload-actions">
+                            <button type="button" id="uploadBtn" class="btn btn-primary">Upload Document</button>
+                            <button type="button" id="cancelBtn" class="btn btn-secondary">Cancel</button>
+                        </div>
+
+                        <div class="upload-progress hidden">
+                            <div class="progress-bar">
+                                <div class="progress-fill"></div>
+                            </div>
+                            <span class="progress-text">Uploading...</span>
+                        </div>
+
+                        <div class="upload-success hidden">
+                            <span class="success-icon">✓</span>
+                            <span>Upload complete!</span>
+                            <button type="button" id="uploadAnotherBtn" class="btn btn-link">Upload Another Document</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Public Upload Confirmation Modal -->
+    <div id="publicConfirmModal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚠️ Confirm Public Upload</h2>
+            </div>
+            <div class="modal-body">
+                <p>You are about to upload this document with <strong>Public Company</strong> access level.</p>
+                <p>This means <strong>ALL employees</strong> in the company will be able to view and access this document.</p>
+                <p>Are you sure you want to proceed?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="confirmPublicUpload" class="btn btn-primary">Yes, Upload as Public</button>
+                <button type="button" id="cancelPublicUpload" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteConfirmModal" class="delete-confirmation-modal">
+        <div class="delete-confirmation-content">
+            <h3>Delete File?</h3>
+            <p id="deleteFileName">Are you sure you want to delete this file?</p>
+            <p style="color: #999; font-size: 12px;">This action cannot be undone.</p>
+            <div class="delete-confirmation-actions">
+                <button type="button" class="btn-cancel-delete" id="cancelDeleteBtn">Cancel</button>
+                <button type="button" class="btn-confirm-delete" id="confirmDeleteBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        window.currentUserRole = "{{ user.role }}";
+        window.defaultClassification = "{{ default_classification }}";
+    </script>
+    <script src="/static/js/upload.js"></script>
+    <script src="/static/js/file_manager.js"></script>
+</body>
+</html>

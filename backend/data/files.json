@@ -1,0 +1,88 @@
+{
+  "files": {
+    "cc924a44-b847-4e85-8a94-35ee314fa175": {
+      "file_id": "cc924a44-b847-4e85-8a94-35ee314fa175",
+      "filename": "Engineering Company Financial Documents Generated (1) - Mar 2026",
+      "file_type": ".pdf",
+      "size": 34769,
+      "classification": "public_company",
+      "uploaded_by": "u_admin_001",
+      "file_path": "uploads/cc924a44-b847-4e85-8a94-35ee314fa175_Engineering Company Financial Documents Generated (1).pdf",
+      "ai_summary": "Apex Bridge & Infrastructure Group: Statement of Retained Earnings for Year Ended December 31, 2025.",
+      "file_type_category": "permanent",
+      "is_permanent": true,
+      "expires_at": null,
+      "uploaded_at": "2026-03-07T02:15:44.019290"
+    },
+    "4e3fbaff-af14-4b4f-adf7-c6779161ef5c": {
+      "file_id": "4e3fbaff-af14-4b4f-adf7-c6779161ef5c",
+      "filename": "Engineering Company Financial Documents Generated (2) - Mar 2026",
+      "file_type": ".pdf",
+      "size": 53790,
+      "classification": "public_company",
+      "uploaded_by": "u_admin_001",
+      "file_path": "uploads/4e3fbaff-af14-4b4f-adf7-c6779161ef5c_Engineering Company Financial Documents Generated (2).pdf",
+      "ai_summary": "Income Statement for the Year Ended December 31, 2025",
+      "file_type_category": "permanent",
+      "is_permanent": true,
+      "expires_at": null,
+      "uploaded_at": "2026-03-07T02:16:53.715528"
+    },
+    "e9b174cf-ac1d-4092-861b-a5a01fbe246c": {
+      "file_id": "e9b174cf-ac1d-4092-861b-a5a01fbe246c",
+      "filename": "Engineering Company Financial Documents Generated (1).pdf",
+      "file_type": ".pdf",
+      "size": 34769,
+      "classification": "admin_only",
+      "uploaded_by": "u_admin_001",
+      "file_path": "uploads/e9b174cf-ac1d-4092-861b-a5a01fbe246c_Engineering Company Financial Documents Generated (1).pdf",
+      "ai_summary": "Statement of Retained Earnings for the Year Ended December 31, 2025",
+      "file_type_category": "permanent",
+      "is_permanent": true,
+      "expires_at": null,
+      "uploaded_at": "2026-03-07T02:35:40.532848"
+    },
+    "c6ebf188-0211-4a15-9d3e-158a7116c74f": {
+      "file_id": "c6ebf188-0211-4a15-9d3e-158a7116c74f",
+      "filename": "Engineering Company Financial Documents Generated.pdf",
+      "file_type": ".pdf",
+      "size": 49643,
+      "classification": "admin_only",
+      "uploaded_by": "u_admin_001",
+      "file_path": "uploads/c6ebf188-0211-4a15-9d3e-158a7116c74f_Engineering Company Financial Documents Generated.pdf",
+      "ai_summary": "Balance Sheet as of December 31, 2025",
+      "file_type_category": "temporary",
+      "is_permanent": false,
+      "expires_at": null,
+      "uploaded_at": "2026-03-07T02:43:28.646156"
+    },
+    "bf3f8bbf-8334-402b-8138-e0f077d5fa1e": {
+      "file_id": "bf3f8bbf-8334-402b-8138-e0f077d5fa1e",
+      "filename": "Engineering Company Financial Documents Generated.pdf",
+      "file_type": ".pdf",
+      "size": 49643,
+      "classification": "admin_only",
+      "uploaded_by": "u_admin_001",
+      "file_path": "uploads/bf3f8bbf-8334-402b-8138-e0f077d5fa1e_Engineering Company Financial Documents Generated.pdf",
+      "ai_summary": "Apex Bridge & Infrastructure Group Balance Sheet",
+      "file_type_category": "permanent",
+      "is_permanent": true,
+      "expires_at": null,
+      "uploaded_at": "2026-03-07T02:54:16.928422"
+    },
+    "b7328289-90d9-46d1-b991-a38d27727ef8": {
+      "file_id": "b7328289-90d9-46d1-b991-a38d27727ef8",
+      "filename": "Engineering Company Financial Documents Generated - Mar 2026",
+      "file_type": ".pdf",
+      "size": 49643,
+      "classification": "admin_only",
+      "uploaded_by": "u_admin_001",
+      "file_path": "uploads/b7328289-90d9-46d1-b991-a38d27727ef8_Engineering Company Financial Documents Generated.pdf",
+      "ai_summary": "Apex Bridge & Infrastructure Group Balance Sheet",
+      "file_type_category": "permanent",
+      "is_permanent": true,
+      "expires_at": null,
+      "uploaded_at": "2026-03-07T02:54:33.479580"
+    }
+  }
+}

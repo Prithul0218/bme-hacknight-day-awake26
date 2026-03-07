@@ -57,6 +57,7 @@ class UploadResponse(BaseModel):
     file_type: str
     size: int
     message: str
+    ai_title: Optional[str] = None
 
 class AnalysisRequest(BaseModel):
     """Request to analyze document"""
