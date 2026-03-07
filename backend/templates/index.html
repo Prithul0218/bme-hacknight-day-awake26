@@ -15,6 +15,7 @@
             </div>
             <div class="header-actions">
                 <a href="/upload" class="upload-link">📤 Upload Manager</a>
+                <a href="/auto-reports" class="upload-link">🗓️ Auto Reports</a>
                 <div class="status-pill">Auto Feed: Live</div>
                 <div class="user-pill">{{ user.name }} ({{ user.role }})</div>
                 <a href="/logout" class="logout-link">Logout</a>
@@ -63,13 +64,13 @@
                     <h3>Temporary Documents</h3>
                     <p>Add ad-hoc files for one-off analysis without changing your daily feed.</p>
                     <div class="upload-area" id="uploadArea">
-                        <input type="file" id="fileInput" accept=".pdf,.xlsx,.xls,.csv" hidden>
-                        <button id="tempUploadBtn" class="btn-secondary" type="button">Upload Temporary Doc</button>
+                        <input type="file" id="fileInput" accept=".pdf,.xlsx,.xls,.csv" multiple hidden>
+                        <button id="tempUploadBtn" class="btn-secondary" type="button">Upload Temporary Docs</button>
                         <span class="upload-hint">PDF, Excel, CSV</span>
                     </div>
                     <div id="fileInfo" class="file-info hidden">
-                        <p><strong>Loaded:</strong> <span id="fileName"></span></p>
-                        <p><strong>Size:</strong> <span id="fileSize"></span></p>
+                        <p><strong>Loaded:</strong> <span id="fileCount">0</span> document(s)</p>
+                        <ul id="fileList" class="temp-file-list"></ul>
                         <p><strong>Classification:</strong> <span id="fileClassification">{{ default_classification }}</span> (auto from role)</p>
                     </div>
                 </div>

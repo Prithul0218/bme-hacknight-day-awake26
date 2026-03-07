@@ -1,5 +1,5 @@
 // State
-let uploadedFileId = null;
+let uploadedFiles = [];
 let userRole = window.currentUserRole || 'employee';
 let defaultClassification = window.defaultClassification || 'public_company';
 
@@ -8,8 +8,8 @@ const fileInput = document.getElementById('fileInput');
 const uploadArea = document.getElementById('uploadArea');
 const tempUploadBtn = document.getElementById('tempUploadBtn');
 const fileInfo = document.getElementById('fileInfo');
-const fileName = document.getElementById('fileName');
-const fileSize = document.getElementById('fileSize');
+const fileCount = document.getElementById('fileCount');
+const fileList = document.getElementById('fileList');
 const fileClassificationText = document.getElementById('fileClassification');
 
 const chatThread = document.getElementById('chatThread');
@@ -52,23 +52,25 @@ uploadArea.addEventListener('drop', (e) => {
 
     const files = e.dataTransfer.files;
     if (files.length > 0) {
-        fileInput.files = files;
-        handleFileSelect();
+        handleFileSelect(files);
     }
 });
 
-async function handleFileSelect() {
-    const file = fileInput.files[0];
-    if (!file) {
+async function handleFileSelect(selectedFiles = null) {
+    const files = selectedFiles || fileInput.files;
+    if (!files || files.length === 0) {
         return;
     }
 
-    fileName.textContent = file.name;
-    fileSize.textContent = formatFileSize(file.size);
-    fileInfo.classList.remove('hidden');
-    appendBubble(`Temporary document added: ${file.name}`, 'assistant');
+    const uploadQueue = Array.from(files);
+    for (const file of uploadQueue) {
+        appendBubble(`Temporary document added: ${file.name}`, 'assistant');
+        await uploadFile(file);
+    }
 
-    await uploadFile(file);
+    // Allow re-selecting same files repeatedly.
+    fileInput.value = '';
+    updateLoadedFilesUI();
 }
 
 async function uploadFile(file) {
@@ -89,7 +91,13 @@ async function uploadFile(file) {
         }
 
         const data = await response.json();
-        uploadedFileId = data.file_id;
+        uploadedFiles.push({
+            file_id: data.file_id,
+            name: file.name,
+            size: file.size,
+            classification,
+        });
+        updateLoadedFilesUI();
         showNotification(`Document uploaded as ${classification.replace(/_/g, ' ')} classification.`, 'success');
     } catch (error) {
         console.error('Upload error:', error);
@@ -97,13 +105,27 @@ async function uploadFile(file) {
     }
 }
 
-// Chat interactions
-chatAskBtn.addEventListener('click', async () => {
-    if (!uploadedFileId) {
-        showNotification('Upload a temporary document before asking questions.', 'error');
+function updateLoadedFilesUI() {
+    if (!fileInfo || !fileCount || !fileList) return;
+
+    if (uploadedFiles.length === 0) {
+        fileInfo.classList.add('hidden');
+        fileCount.textContent = '0';
+        fileList.innerHTML = '';
         return;
     }
 
+    fileInfo.classList.remove('hidden');
+    fileCount.textContent = String(uploadedFiles.length);
+    fileList.innerHTML = uploadedFiles
+        .map(
+            (item) => `<li>${item.name} <span class="temp-file-meta">(${formatFileSize(item.size)})</span></li>`
+        )
+        .join('');
+}
+
+// Chat interactions
+chatAskBtn.addEventListener('click', async () => {
     const question = chatPrompt.value.trim();
     if (!question) {
         showNotification('Type a question in chat first.', 'error');
@@ -126,7 +148,7 @@ chatAskBtn.addEventListener('click', async () => {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                file_id: uploadedFileId,
+                file_ids: uploadedFiles.map((f) => f.file_id),
                 question,
                 departments: selectedDepts,
             }),
@@ -157,10 +179,12 @@ chatAskBtn.addEventListener('click', async () => {
 });
 
 studioGenerateBtn.addEventListener('click', async () => {
-    if (!uploadedFileId) {
+    if (uploadedFiles.length === 0) {
         showNotification('Upload a temporary document before generating Studio assets.', 'error');
         return;
     }
+
+    const latestFileId = uploadedFiles[uploadedFiles.length - 1].file_id;
 
     studioGenerateBtn.disabled = true;
 
@@ -171,7 +195,7 @@ studioGenerateBtn.addEventListener('click', async () => {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                file_id: uploadedFileId,
+                file_id: latestFileId,
                 asset_type: assetType.value,
                 department: studioDepartment.value || null,
                 custom_prompt: studioPrompt.value.trim(),
@@ -282,9 +306,9 @@ function createReportCard(report) {
 }
 
 newAnalysisBtn.addEventListener('click', () => {
-    uploadedFileId = null;
+    uploadedFiles = [];
     fileInput.value = '';
-    fileInfo.classList.add('hidden');
+    updateLoadedFilesUI();
     chatPrompt.value = '';
     studioPrompt.value = '';
     if (fileClassificationText) {
@@ -296,7 +320,7 @@ newAnalysisBtn.addEventListener('click', () => {
     });
 
     assetContainer.innerHTML = '<div class="empty-state">No asset yet. Use Studio controls above to generate one.</div>';
-    appendBubble('Workspace reset. Upload a temporary document to begin again.', 'assistant');
+    appendBubble('Workspace reset. You can ask general questions or upload temporary docs anytime.', 'assistant');
     showNotification('Workspace reset complete.', 'success');
 });
 

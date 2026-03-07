@@ -345,7 +345,112 @@ python backend/test_rag.py
 
 ---
 
-## 🔒 Security Considerations
+## � Human-in-the-Loop Aspects
+
+FinanceBuddy incorporates critical human oversight points to ensure accuracy and security of financial data processing:
+
+### 📋 OCR Review Workflow
+**Why it's needed**: Gemini Vision API OCR can misread scanned PDFs, especially with:
+- Low-quality scans or poor image resolution
+- Complex tables with merged cells
+- Handwritten annotations or stamps
+- Multi-column layouts
+- Font variations or special characters
+
+**Current Implementation**:
+- ✅ Automatic fallback to OCR for image-based PDFs (text extraction fails)
+- ✅ AI-generated summaries include OCR'd content
+- ✅ Chat/RAG queries against OCR'd text
+- ⚠️ **MANUAL REVIEW REQUIRED**: Users must verify OCR accuracy before relying on data for critical decisions
+
+**Recommended Process**:
+1. Upload scanned PDF via upload manager
+2. Review generated AI summary carefully
+3. Cross-check key numbers and tables against original document
+4. Correct any OCR errors in the markdown editor before final storage
+5. Submit corrected version
+
+**Best Practices**:
+- For critical financial reports, always compare OCR'd tables to source
+- Flag low-confidence extractions (especially currency amounts, dates, legal terms)
+- Use original document when OCR accuracy cannot be verified
+- Test with high-quality scans first to establish confidence baseline
+
+### 🚨 Public Document Classification
+**Why it's needed**: Prevents inadvertent exposure of sensitive financial data
+
+**Current Implementation**:
+- ✅ Admin/Management/Finance can assign classification levels
+- ✅ Confirmation modal appears when uploading as `public_company`
+- ✅ User must explicitly confirm they intend public sharing
+- ✅ Role-based dropdown shows only allowed classifications per user
+
+**Classification Levels**:
+| Level | Visibility | Use Case | Review Level |
+|-------|------------|----------|--------------|
+| `public_company` | All employees | General metrics, press releases | Quick check |
+| `finance_only` | Finance dept | Internal reports, detailed budgets | Financial accuracy |
+| `management_only` | Management+ | Strategic plans, forecasts | Strategic alignment |
+| `admin_only` | Admin only | Highly sensitive, executive decisions | Full compliance review |
+
+**Required Human Decision**:
+- Finance team reviews document sensitivity before classification
+- Management confirms strategic documents aren't overexposed
+- Admins approve admin_only escalations for maximum-secrecy docs
+
+### 📊 AI Summary Accuracy Verification
+**Why it's needed**: AI summaries can:
+- Miss critical nuances or caveats
+- Misinterpret complex financial metrics
+- Over-generalize department impacts
+- Include hallucinations for ambiguous content
+
+**Current Verification Points**:
+1. ✅ Summary generated and shown in upload preview
+2. ⚠️ **User reviews** before deciding storage mode:
+   - "Full Document" - Store original for human reference
+   - "AI Summary Only" - Trust summary for key metrics
+3. ⚠️ **Chat conversations** expose missing context quickly:
+   - Inconsistent answers across related questions → potential OCR error
+   - "I don't know" responses → summary too aggressive
+   - Department-specific insights need domain expert validation
+
+**Recommended Process**:
+- Finance lead spots-checks 10% of summary accuracy
+- Compare AI highlights to actual document sections
+- Flag hallucinations or missing metrics
+- Adjust prompts in `backend/prompts/templates.py` if patterns emerge
+
+### 🎯 Department-Specific Insights Quality
+**Why it's needed**: Tailored summarization can miss domain context
+
+**Current Safeguards**:
+- ✅ Multi-department report generation (auto-reports)
+- ⚠️ **Audience requires validation**: Each department head should review first auto-report to confirm relevance
+- ⚠️ **Frequency tuning needed**: Default 7-day cadence may not fit all departments
+
+**Recommended Process**:
+1. Finance team generates first auto-reports for each role
+2. Each department head reviews relevance and accuracy
+3. Provide feedback on:
+   - Which metrics matter most
+   - Missing context or misinterpretations
+   - Too frequent/infrequent delivery
+4. Adjust `report_frequency_days` in settings (future UI planning)
+5. Refine prompts for domain-specific accuracy
+
+### ✅ Checklist for Critical Documents
+When uploading high-impact financial reports, ensure:
+- [ ] **OCR Accuracy**: Spot-check key numbers, dates, amounts
+- [ ] **Classification Correct**: Confirm sensitivity level is appropriate
+- [ ] **Summary Complete**: Key metrics and risks included
+- [ ] **Access List Verified**: Correct departments/roles will see this
+- [ ] **Source Available**: Keep original document for audit trail
+- [ ] **Department Lead Notified**: Primary audience aware of new document
+
+---
+
+## �🔒 Security Considerations
 
 - Access control enforced at API endpoint level
 - Role-based permissions for all operations

@@ -26,7 +26,7 @@ from backend.prompts.templates import DEPARTMENT_CONTEXTS
 import os
 import uuid
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 router = APIRouter()
 
@@ -236,19 +236,47 @@ async def chat_with_financial_data(
     try:
         # Get authenticated user context from cookie/session
         user_context = get_accessible_user_context(request_http)
-        
-        # Check access
-        _check_file_access(request.file_id, user_context)
-        
-        # Get relevant context using RAG semantic search
-        rag_context = await rag_service.get_context_for_query(request.file_id, request.question)
-        
-        # Use fallback to full document if RAG retrieval fails
-        _, document_content = await _get_document_content(request.file_id)
-        financial_text = document_content.get("text", "")
-        
-        # If RAG context is available, use it; otherwise use full document
-        context_to_use = rag_context if rag_context and rag_context != "No relevant context found." else financial_text
+
+        # Support chat with multiple temp docs, single temp doc, or no temp docs.
+        target_ids: List[str] = []
+        if request.file_ids:
+            target_ids.extend([fid for fid in request.file_ids if fid])
+        if request.file_id:
+            target_ids.append(request.file_id)
+        # Keep order while removing duplicates.
+        target_ids = list(dict.fromkeys(target_ids))
+
+        contexts: List[str] = []
+        valid_files: List[str] = []
+        skipped_files: List[str] = []
+
+        for file_id in target_ids:
+            # Skip missing/forbidden files instead of failing the whole chat.
+            try:
+                _check_file_access(file_id, user_context)
+                rag_context = await rag_service.get_context_for_query(file_id, request.question)
+                _, document_content = await _get_document_content(file_id)
+                financial_text = document_content.get("text", "")
+                selected_context = (
+                    rag_context if rag_context and rag_context != "No relevant context found." else financial_text
+                )
+                if selected_context and selected_context.strip():
+                    contexts.append(selected_context.strip())
+                valid_files.append(file_id)
+            except HTTPException:
+                skipped_files.append(file_id)
+            except Exception:
+                skipped_files.append(file_id)
+
+        if contexts:
+            context_to_use = "\n\n---\n\n".join(contexts)
+        else:
+            # Baseline context allows chat continuity even with no uploaded docs.
+            context_to_use = (
+                "No temporary financial documents are currently loaded. "
+                "Provide a concise, practical answer based on general finance best practices "
+                "and clearly state that the guidance is not tied to uploaded company data."
+            )
         
         department_focus = ", ".join([d.value for d in request.departments]) if request.departments else "all departments"
 
@@ -257,6 +285,17 @@ async def chat_with_financial_data(
             question=request.question,
             department_focus=department_focus,
         )
+
+        if skipped_files and valid_files:
+            answer = (
+                answer
+                + "\n\nNote: Some previously uploaded temporary files were unavailable and were skipped."
+            )
+        elif skipped_files and not valid_files:
+            answer = (
+                answer
+                + "\n\nNote: Previously uploaded temporary files were unavailable, so this response is based on general guidance."
+            )
 
         return ChatResponse(
             answer=answer,

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto Reports - FinanceBuddy</title>
+    <link rel="stylesheet" href="/static/css/auto_reports.css">
+</head>
+<body>
+    <div class="reports-shell">
+        <header class="reports-header">
+            <div>
+                <h1>Auto Generated Reports</h1>
+                <p>Scheduled insights for {{ user.name }} ({{ user.role }})</p>
+                <p class="cadence">Current cadence: every {{ frequency_days }} day(s)</p>
+            </div>
+            <div class="header-actions">
+                <a href="/" class="btn-link">Back to Workspace</a>
+                <a href="/logout" class="btn-link secondary">Logout</a>
+            </div>
+        </header>
+
+        {% if reports and reports|length > 0 %}
+        <section class="report-list">
+            {% for report in reports %}
+            <article class="report-card">
+                <div class="report-top">
+                    <h2>{{ report.title }}</h2>
+                    <span class="audience">Audience: {{ report.audience }}</span>
+                </div>
+                <p class="summary">{{ report.summary }}</p>
+
+                {% if report.highlights and report.highlights|length > 0 %}
+                <ul class="highlights">
+                    {% for item in report.highlights %}
+                    <li>{{ item }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+
+                <div class="meta-grid">
+                    <div><strong>Generated:</strong> {{ report.generated_at }}</div>
+                    <div><strong>Next Due:</strong> {{ report.next_due_at }}</div>
+                    <div><strong>Frequency:</strong> {{ report.frequency_days }} day(s)</div>
+                    <div><strong>User:</strong> {{ report.user_name }}</div>
+                </div>
+            </article>
+            {% endfor %}
+        </section>
+        {% else %}
+        <section class="empty-state">
+            <h2>No reports yet</h2>
+            <p>The scheduler will generate reports automatically based on your configured cadence.</p>
+        </section>
+        {% endif %}
+    </div>
+</body>
+</html>

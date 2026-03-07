@@ -82,7 +82,8 @@ class AnalysisResponse(BaseModel):
 
 class ChatRequest(BaseModel):
     """Request for conversational Q&A against uploaded financial data"""
-    file_id: str
+    file_id: Optional[str] = None
+    file_ids: Optional[List[str]] = []
     question: str
     departments: Optional[List[Department]] = []
 

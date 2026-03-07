@@ -122,7 +122,7 @@ body {
 }
 
 .resizer {
-    width: 10px;
+    width: 2px;
     border-radius: 999px;
     background: linear-gradient(180deg, #252425, #171717);
     border: 1px solid #343334;
@@ -230,6 +230,24 @@ body {
     border-radius: 10px;
     padding: 0.6rem;
     font-size: 0.85rem;
+}
+
+.temp-file-list {
+    margin: 0.4rem 0 0.6rem 1rem;
+    padding: 0;
+    display: grid;
+    gap: 0.2rem;
+}
+
+.temp-file-list li {
+    color: var(--text-main);
+    font-size: 0.82rem;
+    word-break: break-word;
+}
+
+.temp-file-meta {
+    color: var(--text-muted);
+    font-size: 0.78rem;
 }
 
 .center-panel {

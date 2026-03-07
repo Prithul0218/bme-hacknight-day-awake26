@@ -10,6 +10,7 @@ from backend.services.access_control import (
     get_default_classification_for_role,
     get_assignable_classifications_for_role,
 )
+from backend.services.auto_report_service import start_scheduler, stop_scheduler, get_reports_for_user
 from backend.models.schemas import Role
 
 # Load environment variables
@@ -44,6 +45,17 @@ ensure_users_db()
 from backend.routers import reports
 
 app.include_router(reports.router, prefix="/api", tags=["reports"])
+
+
+@app.on_event("startup")
+async def on_startup():
+    # Run report generation every hour; each user is generated only when due.
+    start_scheduler(interval_seconds=3600)
+
+
+@app.on_event("shutdown")
+async def on_shutdown():
+    stop_scheduler()
 
 
 def _get_current_user_from_cookie(request: Request):
@@ -168,6 +180,28 @@ async def upload_manager(request: Request):
             "user": user,
             "default_classification": default_classification,
             "allowed_classifications": allowed_classifications,
+        },
+    )
+
+
+@app.get("/auto-reports")
+async def auto_reports_page(request: Request):
+    """View scheduled auto-generated reports for the current user."""
+    auth_or_redirect = _require_user_or_redirect(request)
+    if isinstance(auth_or_redirect, RedirectResponse):
+        return auth_or_redirect
+
+    user = auth_or_redirect
+    reports = get_reports_for_user(user)
+    frequency_days = int(user.get("report_frequency_days", 7) or 7)
+
+    return templates.TemplateResponse(
+        "auto_reports.html",
+        {
+            "request": request,
+            "user": user,
+            "reports": reports,
+            "frequency_days": frequency_days,
         },
     )
 

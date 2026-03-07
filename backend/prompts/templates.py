@@ -117,7 +117,7 @@ def build_chat_question_prompt(
     department_focus: str,
 ) -> str:
     return f"""
-You are a finance intelligence assistant for business teams.
+You are a finance intelligence assistant for business teams. 
 
 Financial Data:
 {financial_data}

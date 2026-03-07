@@ -1,0 +1,127 @@
+body {
+    margin: 0;
+    font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #0b0b0b;
+    color: #f7f4f2;
+}
+
+.reports-shell {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.reports-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.reports-header h1 {
+    margin: 0;
+    font-size: 2rem;
+}
+
+.reports-header p {
+    margin: 0.4rem 0 0;
+    color: #b4aeaa;
+}
+
+.cadence {
+    color: #fe742e;
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.7rem;
+}
+
+.btn-link {
+    color: #fe742e;
+    text-decoration: none;
+    border: 1px solid rgba(254, 116, 46, 0.3);
+    border-radius: 8px;
+    padding: 0.5rem 0.9rem;
+}
+
+.btn-link.secondary {
+    color: #ffb996;
+    border-color: rgba(255, 185, 150, 0.3);
+}
+
+.report-list {
+    display: grid;
+    gap: 1rem;
+}
+
+.report-card {
+    background: #131313;
+    border: 1px solid #252425;
+    border-radius: 12px;
+    padding: 1rem;
+}
+
+.report-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.report-top h2 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.audience {
+    background: rgba(254, 116, 46, 0.12);
+    color: #fe742e;
+    border: 1px solid rgba(254, 116, 46, 0.35);
+    border-radius: 999px;
+    padding: 0.2rem 0.7rem;
+    font-size: 0.78rem;
+    text-transform: capitalize;
+}
+
+.summary {
+    color: #d7d3d1;
+    margin: 0.9rem 0;
+}
+
+.highlights {
+    margin: 0 0 0.9rem;
+    padding-left: 1.2rem;
+    color: #c5c0bc;
+}
+
+.meta-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: #b4aeaa;
+}
+
+.empty-state {
+    text-align: center;
+    background: #131313;
+    border: 1px solid #252425;
+    border-radius: 12px;
+    padding: 2rem;
+}
+
+@media (max-width: 768px) {
+    .reports-shell {
+        padding: 1rem;
+    }
+
+    .reports-header {
+        flex-direction: column;
+    }
+
+    .meta-grid {
+        grid-template-columns: 1fr;
+    }
+}

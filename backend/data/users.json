@@ -6,6 +6,7 @@
     "password": "1234",
     "role": "admin",
     "department": null,
+    "report_frequency_days": 7,
     "is_active": true
   },
   {
@@ -15,6 +16,7 @@
     "password": "1234",
     "role": "management",
     "department": null,
+    "report_frequency_days": 7,
     "is_active": true
   },
   {
@@ -24,6 +26,7 @@
     "password": "1234",
     "role": "finance",
     "department": null,
+    "report_frequency_days": 7,
     "is_active": true
   },
   {
@@ -32,7 +35,8 @@
     "email": "employee@financebuddy.local",
     "password": "1234",
     "role": "employee",
-    "department": null,
+    "department": "engineering",
+    "report_frequency_days": 7,
     "is_active": true
   }
 ]

@@ -1,0 +1,66 @@
+[
+  {
+    "report_id": "3b356b49-eb53-42db-ac42-61e235e19382",
+    "user_id": "u_admin_001",
+    "user_name": "Admin User",
+    "audience": "admin",
+    "title": "Auto Report: Admin Update (Mar 07, 2026)",
+    "summary": "Generated automatically for Admin User (admin). Focus: Platform-wide control summary and governance posture. Current tracked docs: 0.",
+    "highlights": [
+      "Cadence set to every 7 day(s)",
+      "Audience context: admin",
+      "Document baseline at generation time: 0"
+    ],
+    "generated_at": "2026-03-07T00:42:08.750311",
+    "next_due_at": "2026-03-14T00:42:08.750311",
+    "frequency_days": 7
+  },
+  {
+    "report_id": "b9c2dcac-eb8c-4257-8513-c5acde0c9ebe",
+    "user_id": "u_mgmt_001",
+    "user_name": "Management User",
+    "audience": "management",
+    "title": "Auto Report: Management Update (Mar 07, 2026)",
+    "summary": "Generated automatically for Management User (management). Focus: Cross-team spend posture and execution risk overview. Current tracked docs: 0.",
+    "highlights": [
+      "Cadence set to every 7 day(s)",
+      "Audience context: management",
+      "Document baseline at generation time: 0"
+    ],
+    "generated_at": "2026-03-07T00:42:08.750311",
+    "next_due_at": "2026-03-14T00:42:08.750311",
+    "frequency_days": 7
+  },
+  {
+    "report_id": "89dece67-7c47-4efe-96b1-dcaa7f61d563",
+    "user_id": "u_fin_001",
+    "user_name": "Finance User",
+    "audience": "finance",
+    "title": "Auto Report: Finance Update (Mar 07, 2026)",
+    "summary": "Generated automatically for Finance User (finance). Focus: Cash runway, variance movements, and liquidity watchpoints. Current tracked docs: 0.",
+    "highlights": [
+      "Cadence set to every 7 day(s)",
+      "Audience context: finance",
+      "Document baseline at generation time: 0"
+    ],
+    "generated_at": "2026-03-07T00:42:08.750311",
+    "next_due_at": "2026-03-14T00:42:08.750311",
+    "frequency_days": 7
+  },
+  {
+    "report_id": "be3a6a14-af9d-4e7f-a115-d2caca053018",
+    "user_id": "u_emp_001",
+    "user_name": "Employee User",
+    "audience": "employee",
+    "title": "Auto Report: Employee Update (Mar 07, 2026)",
+    "summary": "Generated automatically for Employee User (employee). Focus: Business health snapshot relevant to your team. Current tracked docs: 0.",
+    "highlights": [
+      "Cadence set to every 7 day(s)",
+      "Audience context: employee",
+      "Document baseline at generation time: 0"
+    ],
+    "generated_at": "2026-03-07T00:42:08.750311",
+    "next_due_at": "2026-03-14T00:42:08.750311",
+    "frequency_days": 7
+  }
+]

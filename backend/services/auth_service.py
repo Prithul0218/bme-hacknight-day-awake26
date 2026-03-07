@@ -13,6 +13,7 @@ SEED_USERS = [
         "password": "1234",
         "role": "admin",
         "department": None,
+        "report_frequency_days": 7,
         "is_active": True,
     },
     {
@@ -22,6 +23,7 @@ SEED_USERS = [
         "password": "1234",
         "role": "management",
         "department": None,
+        "report_frequency_days": 7,
         "is_active": True,
     },
     {
@@ -31,6 +33,7 @@ SEED_USERS = [
         "password": "1234",
         "role": "finance",
         "department": None,
+        "report_frequency_days": 7,
         "is_active": True,
     },
     {
@@ -39,7 +42,8 @@ SEED_USERS = [
         "email": "employee@financebuddy.local",
         "password": "1234",
         "role": "employee",
-        "department": None,
+        "department": "engineering",
+        "report_frequency_days": 7,
         "is_active": True,
     },
 ]
@@ -82,6 +86,7 @@ def sanitize_user(user: Dict) -> Dict:
         "email": user.get("email"),
         "role": user.get("role"),
         "department": user.get("department"),
+        "report_frequency_days": int(user.get("report_frequency_days", 7) or 7),
         "is_active": bool(user.get("is_active", True)),
     }
 
