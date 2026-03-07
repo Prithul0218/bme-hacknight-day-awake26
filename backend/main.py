@@ -236,6 +236,24 @@ async def auto_reports_page(request: Request):
         },
     )
 
+
+@app.get("/alerts")
+async def alerts_page(request: Request):
+    """Quick alerts page for role-aware dropdown alert creation."""
+    auth_or_redirect = _require_user_or_redirect(request)
+    if isinstance(auth_or_redirect, RedirectResponse):
+        return auth_or_redirect
+
+    user = auth_or_redirect
+    return templates.TemplateResponse(
+        "alerts.html",
+        {
+            "request": request,
+            "user": user,
+        },
+    )
+
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""

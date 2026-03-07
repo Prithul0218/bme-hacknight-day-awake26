@@ -5,11 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Upload Manager - FinanceBuddy</title>
     <link rel="stylesheet" href="/static/css/upload.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
 </head>
 <body>
     <div class="upload-container">
         <header class="upload-header">
-            <h1>📤 Document Upload Manager</h1>
+            <h1><span class="material-symbols-outlined" style="vertical-align: middle; margin-right: 8px;">upload</span>Document Upload Manager</h1>
             <p class="upload-subtitle">Upload financial documents with access control and AI summarization</p>
             <p class="upload-subtitle">Logged in as {{ user.name }} ({{ user.role }})</p>
             <a href="/" class="back-link">← Back to Workspace</a>
@@ -21,7 +22,7 @@
                 <div class="upload-area">
                     <input type="file" id="documentFile" accept=".pdf,.xlsx,.xls,.csv" class="file-input">
                     <label for="documentFile" class="upload-trigger">
-                        <span class="upload-icon">📄</span>
+                        <span class="material-symbols-outlined upload-icon">description</span>
                         <span class="upload-text">Click to upload or drag file here</span>
                         <span class="upload-hint">PDF, Excel, or CSV files</span>
                     </label>
@@ -29,7 +30,7 @@
 
                 <div class="upload-details hidden">
                     <div class="file-preview">
-                        <span class="file-icon">📄</span>
+                        <span class="material-symbols-outlined file-icon">description</span>
                         <div class="file-info">
                             <p class="file-name"></p>
                             <p class="file-size"></p>

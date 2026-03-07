@@ -202,9 +202,9 @@ class RAGService:
         
         return dot_product / (magnitude_a * magnitude_b)
     
-    async def search(self, file_id: str, query: str, top_k: int = TOP_K) -> List[Tuple[str, float]]:
+    async def search_with_metadata(self, file_id: str, query: str, top_k: int = TOP_K) -> List[Dict]:
         """
-        Retrieve relevant chunks for a query using semantic search.
+        Retrieve relevant chunks with full metadata for citation tracking.
         
         Args:
             file_id: ID of the file to search in
@@ -212,7 +212,7 @@ class RAGService:
             top_k: Number of top chunks to return
             
         Returns:
-            List of (chunk_text, similarity_score) tuples, sorted by relevance
+            List of chunk dictionaries with metadata and similarity scores
         """
         if file_id not in embeddings_store:
             return []
@@ -222,7 +222,12 @@ class RAGService:
         if not chunks or not chunks[0].get('embedding'):
             # Fallback: return first few chunks without semantic search
             print(f"⚠️  No embeddings found for {file_id}, returning first chunks")
-            return [(chunk['text'], 0.5) for chunk in chunks[:top_k]]
+            results = []
+            for chunk in chunks[:top_k]:
+                chunk_copy = chunk.copy()
+                chunk_copy['similarity'] = 0.5
+                results.append(chunk_copy)
+            return results
         
         try:
             # Embed the query
@@ -245,22 +250,85 @@ class RAGService:
                     query_embedding,
                     chunk.get('embedding', [])
                 )
-                scored_chunks.append((chunk['text'], similarity))
+                chunk_with_score = chunk.copy()
+                chunk_with_score['similarity'] = similarity
+                scored_chunks.append(chunk_with_score)
             
             # Sort by similarity and return top-k
-            scored_chunks.sort(key=lambda x: x[1], reverse=True)
+            scored_chunks.sort(key=lambda x: x['similarity'], reverse=True)
             results = scored_chunks[:top_k]
             
-            print(f"🔎 Found {len(results)} relevant chunks (top-k={top_k})")
+            print(f"🔎 Found {len(results)} relevant chunks with metadata (top-k={top_k})")
             return results
             
         except Exception as e:
             print(f"⚠️  Search failed: {e}")
-            return [(chunk['text'], 0.5) for chunk in chunks[:top_k]]
+            results = []
+            for chunk in chunks[:top_k]:
+                chunk_copy = chunk.copy()
+                chunk_copy['similarity'] = 0.5
+                results.append(chunk_copy)
+            return results
+    
+    async def search(self, file_id: str, query: str, top_k: int = TOP_K) -> List[Tuple[str, float]]:
+        """
+        Retrieve relevant chunks for a query using semantic search.
+        (Legacy method for backwards compatibility - use search_with_metadata for citations)
+        
+        Args:
+            file_id: ID of the file to search in
+            query: User's question/search query
+            top_k: Number of top chunks to return
+            
+        Returns:
+            List of (chunk_text, similarity_score) tuples, sorted by relevance
+        """
+        chunks_with_metadata = await self.search_with_metadata(file_id, query, top_k)
+        return [(chunk['text'], chunk['similarity']) for chunk in chunks_with_metadata]
+    
+    async def get_context_with_citations(self, file_id: str, query: str) -> Tuple[str, List[Dict]]:
+        """
+        Get relevant context for a query WITH citation metadata.
+        
+        Args:
+            file_id: ID of the file
+            query: User's question
+            
+        Returns:
+            Tuple of (formatted_context_string, list_of_chunk_metadata)
+        """
+        results = await self.search_with_metadata(file_id, query, top_k=TOP_K)
+        
+        if not results:
+            return "No relevant context found.", []
+        
+        # Format context with source markers
+        context_parts = []
+        citation_metadata = []
+        
+        for i, chunk in enumerate(results, 1):
+            similarity = chunk.get('similarity', 0)
+            confidence = f"{similarity:.1%}" if similarity > 0 else "N/A"
+            context_parts.append(f"[Source {i} - Relevance: {confidence}]\n{chunk['text']}\n")
+            
+            # Store citation metadata
+            citation_metadata.append({
+                'citation_id': i,
+                'file_id': chunk['file_id'],
+                'chunk_id': chunk['chunk_id'],
+                'start_char': chunk['metadata'].get('start_char', 0),
+                'end_char': chunk['metadata'].get('end_char', 0),
+                'text': chunk['text'],
+                'similarity': similarity
+            })
+        
+        context = "\n".join(context_parts)
+        return context, citation_metadata
     
     async def get_context_for_query(self, file_id: str, query: str) -> str:
         """
         Get relevant context for a query to use in prompts.
+        (Legacy method for backwards compatibility - use get_context_with_citations for citation support)
         
         Args:
             file_id: ID of the file
@@ -269,19 +337,7 @@ class RAGService:
         Returns:
             Formatted context string from retrieved chunks
         """
-        results = await self.search(file_id, query, top_k=TOP_K)
-        
-        if not results:
-            # Fallback to full document text if no chunks found
-            return "No relevant context found."
-        
-        # Format context with source information
-        context_parts = []
-        for i, (chunk_text, score) in enumerate(results, 1):
-            confidence = f"{score:.1%}" if score > 0 else "N/A"
-            context_parts.append(f"[Source {i} - Relevance: {confidence}]\n{chunk_text}\n")
-        
-        context = "\n".join(context_parts)
+        context, _ = await self.get_context_with_citations(file_id, query)
         return context
     
     def clear_index(self, file_id: str):

@@ -89,10 +89,34 @@ class ChatRequest(BaseModel):
     departments: Optional[List[Department]] = []
 
 
+class SourceChunk(BaseModel):
+    """Information about a source chunk used in a response"""
+    file_id: str
+    filename: str
+    chunk_id: int
+    start_char: int
+    end_char: int
+    text_preview: str  # First 200 chars of the chunk
+    relevance_score: float
+
+
+class Citation(BaseModel):
+    """Citation linking response to source document"""
+    citation_id: int  # [1], [2], etc.
+    file_id: str
+    filename: str
+    chunk_id: int
+    start_char: int
+    end_char: int
+    relevance_score: float
+    text_preview: str  # Short preview of cited text
+
+
 class ChatResponse(BaseModel):
     """Response for conversational Q&A"""
     answer: str
     timestamp: str
+    citations: List[Citation] = []
 
 
 class StudioAssetType(str, Enum):
@@ -104,12 +128,28 @@ class StudioAssetType(str, Enum):
     SLIDE_OUTLINE = "slide_outline"
 
 
+class StudioComplexity(str, Enum):
+    """Complexity level requested for studio assets"""
+    BRIEF = "brief"
+    STANDARD = "standard"
+    DETAILED = "detailed"
+
+
+class StudioLength(str, Enum):
+    """Length target requested for studio assets"""
+    SHORT = "short"
+    MEDIUM = "medium"
+    LONG = "long"
+
+
 class StudioRequest(BaseModel):
     """Request for studio artifact generation"""
     file_id: str
     asset_type: StudioAssetType
     department: Optional[Department] = None
     custom_prompt: Optional[str] = ""
+    complexity: StudioComplexity = StudioComplexity.STANDARD
+    length: StudioLength = StudioLength.MEDIUM
 
 
 class StudioResponse(BaseModel):
@@ -118,3 +158,96 @@ class StudioResponse(BaseModel):
     title: str
     content: str
     timestamp: str
+    image_data_url: Optional[str] = None
+    citations: List[Citation] = []
+
+
+class AlertMetric(str, Enum):
+    """Metrics supported by quick alerts"""
+    REVENUE = "revenue"
+    OPERATING_EXPENSE = "operating_expense"
+    DEPARTMENT_SPEND = "department_spend"
+    CASH_BALANCE = "cash_balance"
+    BURN_RATE = "burn_rate"
+    AR_AGING = "ar_aging"
+    AP_AGING = "ap_aging"
+    BUDGET_VARIANCE_PERCENT = "budget_variance_percent"
+
+
+class AlertCondition(str, Enum):
+    """Condition operators for quick alerts"""
+    GREATER_THAN = ">"
+    LESS_THAN = "<"
+    GREATER_THAN_OR_EQUAL = ">="
+    LESS_THAN_OR_EQUAL = "<="
+    CHANGES_BY_PERCENT = "changes_by_percent"
+
+
+class AlertTimeWindow(str, Enum):
+    """Evaluation windows for quick alerts"""
+    DAILY = "daily"
+    WEEKLY = "weekly"
+    MONTHLY = "monthly"
+
+
+class AlertSeverity(str, Enum):
+    """Alert severity levels"""
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+
+
+class AlertDigestMode(str, Enum):
+    """Alert delivery cadence"""
+    REALTIME = "realtime"
+    DAILY_DIGEST = "daily_digest"
+    WEEKLY_DIGEST = "weekly_digest"
+
+
+class AlertChannel(str, Enum):
+    """Delivery channels for alerts"""
+    IN_APP = "in_app"
+    EMAIL = "email"
+    SMS = "sms"
+
+
+class AlertStatus(str, Enum):
+    """Alert activation status"""
+    ACTIVE = "active"
+    PAUSED = "paused"
+
+
+class QuickAlertCreateRequest(BaseModel):
+    """Request for creating a quick dropdown alert"""
+    alert_name: str
+    metric: AlertMetric
+    condition: AlertCondition
+    threshold_value: float
+    time_window: AlertTimeWindow
+    scope_department: Optional[Department] = None
+    severity: AlertSeverity = AlertSeverity.MEDIUM
+    delivery_channels: List[AlertChannel] = [AlertChannel.IN_APP]
+    digest_mode: AlertDigestMode = AlertDigestMode.REALTIME
+
+
+class AlertUpdateRequest(BaseModel):
+    """Request for updating alert status"""
+    status: AlertStatus
+
+
+class AlertResponse(BaseModel):
+    """Alert payload returned to client"""
+    alert_id: str
+    alert_name: str
+    metric: AlertMetric
+    condition: AlertCondition
+    threshold_value: float
+    time_window: AlertTimeWindow
+    scope_department: Optional[Department] = None
+    severity: AlertSeverity
+    delivery_channels: List[AlertChannel]
+    digest_mode: AlertDigestMode
+    status: AlertStatus
+    created_by: str
+    created_at: str
+    last_triggered_at: Optional[str] = None

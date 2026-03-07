@@ -20,13 +20,33 @@ const chatAskBtn = document.getElementById('chatAskBtn');
 const newAnalysisBtn = document.getElementById('newAnalysisBtn');
 const assetContainer = document.getElementById('assetContainer');
 const toast = document.getElementById('toast');
-const studioGenerateBtn = document.getElementById('studioGenerateBtn');
-const assetType = document.getElementById('assetType');
-const studioDepartment = document.getElementById('studioDepartment');
-const studioPrompt = document.getElementById('studioPrompt');
+const studioAssetIcons = document.getElementById('studioAssetIcons');
+const studioConfigModal = document.getElementById('studioConfigModal');
+const studioConfigTitle = document.getElementById('studioConfigTitle');
+const studioConfigCloseBtn = document.getElementById('studioConfigCloseBtn');
+const studioConfigCancelBtn = document.getElementById('studioConfigCancelBtn');
+const studioConfigGenerateBtn = document.getElementById('studioConfigGenerateBtn');
+const studioModalDepartment = document.getElementById('studioModalDepartment');
+const studioModalPrompt = document.getElementById('studioModalPrompt');
+const studioModalComplexity = document.getElementById('studioModalComplexity');
+const studioModalLength = document.getElementById('studioModalLength');
+const studioAssetViewModal = document.getElementById('studioAssetViewModal');
+const studioAssetViewTitle = document.getElementById('studioAssetViewTitle');
+const studioAssetViewMeta = document.getElementById('studioAssetViewMeta');
+const studioAssetViewContent = document.getElementById('studioAssetViewContent');
+const studioAssetViewCitations = document.getElementById('studioAssetViewCitations');
+const studioAssetViewCloseBtn = document.getElementById('studioAssetViewCloseBtn');
+const studioAssetCloseBtn = document.getElementById('studioAssetCloseBtn');
+const studioAssetDeleteBtn = document.getElementById('studioAssetDeleteBtn');
+const studioAssetShareBtn = document.getElementById('studioAssetShareBtn');
 const workspaceGrid = document.querySelector('.workspace-grid');
 const resizerLeft = document.getElementById('resizerLeft');
 const resizerRight = document.getElementById('resizerRight');
+
+let selectedStudioAssetType = null;
+let selectedStudioAssetLabel = null;
+let generatedStudioAssets = [];
+let selectedGeneratedAssetId = null;
 
 // Load available permanent files on page load
 async function fetchAvailablePermanentFiles() {
@@ -299,7 +319,7 @@ chatAskBtn.addEventListener('click', async () => {
         }
 
         const data = await response.json();
-        appendBubble(data.answer || 'No response available.', 'assistant');
+        appendBubble(data.answer || 'No response available.', 'assistant', data.citations || []);
         chatPrompt.value = '';
     } catch (error) {
         console.error('Chat error:', error);
@@ -311,51 +331,139 @@ chatAskBtn.addEventListener('click', async () => {
     }
 });
 
-studioGenerateBtn.addEventListener('click', async () => {
-    if (uploadedFiles.length === 0) {
-        showNotification('Upload a temporary document before generating Studio assets.', 'error');
-        return;
-    }
-
-    const latestFileId = uploadedFiles[uploadedFiles.length - 1].file_id;
-
-    studioGenerateBtn.disabled = true;
-
-    try {
-        const response = await fetch('/api/studio', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                file_id: latestFileId,
-                asset_type: assetType.value,
-                department: studioDepartment.value || null,
-                custom_prompt: studioPrompt.value.trim(),
-            }),
-        });
-
-        if (!response.ok) {
-            let errorMessage = 'Studio generation failed';
-            try {
-                const err = await response.json();
-                errorMessage = err.detail || errorMessage;
-            } catch (_) {
-                // Keep default when backend response is not JSON.
-            }
-            throw new Error(errorMessage);
+if (studioAssetIcons) {
+    studioAssetIcons.addEventListener('click', (event) => {
+        const button = event.target.closest('.studio-icon-btn');
+        if (!button) {
+            return;
         }
 
-        const data = await response.json();
-        addStudioAssetCard(data);
-        showNotification('Studio asset generated.', 'success');
-    } catch (error) {
-        console.error('Studio error:', error);
-        showNotification(error.message || 'Studio generation failed.', 'error');
-    } finally {
-        studioGenerateBtn.disabled = false;
+        if (uploadedFiles.length === 0) {
+            showNotification('Upload a temporary document before generating Studio assets.', 'error');
+            return;
+        }
+
+        selectedStudioAssetType = button.getAttribute('data-asset-type');
+        selectedStudioAssetLabel = button.getAttribute('data-asset-label') || 'Studio Asset';
+
+        studioConfigTitle.textContent = `Generate ${selectedStudioAssetLabel}`;
+        studioConfigModal.style.display = 'block';
+        studioConfigModal.setAttribute('aria-hidden', 'false');
+    });
+}
+
+function closeStudioConfigModal() {
+    if (!studioConfigModal) {
+        return;
     }
-});
+    studioConfigModal.style.display = 'none';
+    studioConfigModal.setAttribute('aria-hidden', 'true');
+}
+
+if (studioConfigCloseBtn) {
+    studioConfigCloseBtn.addEventListener('click', closeStudioConfigModal);
+}
+if (studioConfigCancelBtn) {
+    studioConfigCancelBtn.addEventListener('click', closeStudioConfigModal);
+}
+if (studioConfigModal) {
+    studioConfigModal.addEventListener('click', (event) => {
+        if (event.target === studioConfigModal) {
+            closeStudioConfigModal();
+        }
+    });
+}
+
+if (studioConfigGenerateBtn) {
+    studioConfigGenerateBtn.addEventListener('click', async () => {
+        if (!selectedStudioAssetType) {
+            showNotification('Choose an asset type first.', 'error');
+            return;
+        }
+        if (uploadedFiles.length === 0) {
+            showNotification('Upload a temporary document before generating Studio assets.', 'error');
+            return;
+        }
+
+        const latestFileId = uploadedFiles[uploadedFiles.length - 1].file_id;
+        const pendingCardId = addPendingStudioAssetCard(selectedStudioAssetLabel || 'Generated Asset');
+        studioConfigGenerateBtn.disabled = true;
+
+        try {
+            const response = await fetch('/api/studio', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    file_id: latestFileId,
+                    asset_type: selectedStudioAssetType,
+                    department: studioModalDepartment.value || null,
+                    custom_prompt: studioModalPrompt.value.trim(),
+                    complexity: studioModalComplexity.value,
+                    length: studioModalLength.value,
+                }),
+            });
+
+            if (!response.ok) {
+                let errorMessage = 'Studio generation failed';
+                try {
+                    const err = await response.json();
+                    errorMessage = err.detail || errorMessage;
+                } catch (_) {
+                    // Keep default when backend response is not JSON.
+                }
+                throw new Error(errorMessage);
+            }
+
+            const data = await response.json();
+            removePendingStudioAssetCard(pendingCardId);
+            addStudioAssetCard(data);
+            closeStudioConfigModal();
+            showNotification('Studio asset generated.', 'success');
+        } catch (error) {
+            removePendingStudioAssetCard(pendingCardId);
+            console.error('Studio error:', error);
+            showNotification(error.message || 'Studio generation failed.', 'error');
+        } finally {
+            studioConfigGenerateBtn.disabled = false;
+        }
+    });
+}
+
+function addPendingStudioAssetCard(assetLabel) {
+    const hasEmpty = assetContainer.querySelector('.empty-state');
+    if (hasEmpty) {
+        assetContainer.innerHTML = '';
+    }
+
+    const pendingId = `pending-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const card = document.createElement('article');
+    card.className = 'asset-card asset-card-pending';
+    card.setAttribute('data-pending-asset-id', pendingId);
+    card.innerHTML = `
+        <h3>${assetLabel}</h3>
+        <div class="asset-meta">${new Date().toLocaleString()}</div>
+        <div class="asset-loading-row">
+            <span class="asset-spinner" aria-hidden="true"></span>
+            <span>Generating...</span>
+        </div>
+    `;
+
+    assetContainer.prepend(card);
+    return pendingId;
+}
+
+function removePendingStudioAssetCard(pendingId) {
+    const pendingCard = assetContainer.querySelector(`[data-pending-asset-id="${pendingId}"]`);
+    if (pendingCard) {
+        pendingCard.remove();
+    }
+
+    if (!assetContainer.querySelector('.asset-card') && !assetContainer.querySelector('.empty-state')) {
+        assetContainer.innerHTML = '<div class="empty-state">No asset yet. Use Studio controls above to generate one.</div>';
+    }
+}
 
 function addStudioAssetCard(asset) {
     const hasEmpty = assetContainer.querySelector('.empty-state');
@@ -363,15 +471,157 @@ function addStudioAssetCard(asset) {
         assetContainer.innerHTML = '';
     }
 
+    const generatedAsset = {
+        ...asset,
+        _id: `asset-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    };
+    generatedStudioAssets.unshift(generatedAsset);
+
     const card = document.createElement('article');
     card.className = 'asset-card';
+    card.setAttribute('data-generated-asset-id', generatedAsset._id);
+    card.setAttribute('role', 'button');
+    card.setAttribute('tabindex', '0');
+    const imagePreview = generatedAsset.image_data_url
+        ? `<img class="asset-card-thumb" src="${generatedAsset.image_data_url}" alt="${generatedAsset.title}" />`
+        : '';
+
     card.innerHTML = `
-        <h3>${asset.title}</h3>
-        <div class="asset-meta">${asset.asset_type.replace(/_/g, ' ')} · ${new Date(asset.timestamp).toLocaleString()}</div>
-        <div class="asset-content">${asset.content}</div>
+        <h3>${generatedAsset.title}</h3>
+        <div class="asset-meta">${new Date(generatedAsset.timestamp).toLocaleString()}</div>
+        ${imagePreview}
     `;
 
     assetContainer.prepend(card);
+}
+
+if (assetContainer) {
+    assetContainer.addEventListener('click', (event) => {
+        const card = event.target.closest('.asset-card');
+        if (!card) {
+            return;
+        }
+        const generatedAssetId = card.getAttribute('data-generated-asset-id');
+        if (generatedAssetId) {
+            openGeneratedAssetModal(generatedAssetId);
+        }
+    });
+
+    assetContainer.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') {
+            return;
+        }
+        const card = event.target.closest('.asset-card');
+        if (!card) {
+            return;
+        }
+        event.preventDefault();
+        const generatedAssetId = card.getAttribute('data-generated-asset-id');
+        if (generatedAssetId) {
+            openGeneratedAssetModal(generatedAssetId);
+        }
+    });
+}
+
+function openGeneratedAssetModal(assetId) {
+    const asset = generatedStudioAssets.find((item) => item._id === assetId);
+    if (!asset || !studioAssetViewModal) {
+        return;
+    }
+
+    selectedGeneratedAssetId = assetId;
+    studioAssetViewTitle.textContent = asset.title || 'Generated Asset';
+    studioAssetViewMeta.textContent = `${asset.asset_type.replace(/_/g, ' ')} · ${new Date(asset.timestamp).toLocaleString()}`;
+    if (asset.image_data_url) {
+        const captionHtml = asset.content ? `<div class="asset-image-caption">${parseMarkdown(asset.content)}</div>` : '';
+        studioAssetViewContent.innerHTML = `
+            <div class="asset-view-image-wrap">
+                <img src="${asset.image_data_url}" alt="${asset.title || 'Generated infographic'}" class="asset-view-image" />
+            </div>
+            ${captionHtml}
+        `;
+    } else {
+        studioAssetViewContent.innerHTML = parseMarkdown(asset.content || '');
+    }
+
+    // Render citations if present
+    if (asset.citations && asset.citations.length > 0) {
+        studioAssetViewCitations.classList.remove('hidden');
+        studioAssetViewCitations.innerHTML = `
+            <div class="citations-label">Sources</div>
+            <div class="citations-list">
+                ${asset.citations
+                    .map(
+                        (citation, index) =>
+                            `<button type="button" class="citation-badge" data-asset-citation-index="${index}">[${citation.citation_id}] ${citation.filename}</button>`
+                    )
+                    .join('')}
+            </div>
+        `;
+    } else {
+        studioAssetViewCitations.classList.add('hidden');
+        studioAssetViewCitations.innerHTML = '';
+    }
+
+    studioAssetViewModal.style.display = 'block';
+    studioAssetViewModal.setAttribute('aria-hidden', 'false');
+}
+
+function closeGeneratedAssetModal() {
+    if (!studioAssetViewModal) {
+        return;
+    }
+    studioAssetViewModal.style.display = 'none';
+    studioAssetViewModal.setAttribute('aria-hidden', 'true');
+    selectedGeneratedAssetId = null;
+}
+
+if (studioAssetViewModal) {
+    studioAssetViewModal.addEventListener('click', (event) => {
+        if (event.target === studioAssetViewModal) {
+            closeGeneratedAssetModal();
+            return;
+        }
+
+        const citationButton = event.target.closest('[data-asset-citation-index]');
+        if (!citationButton || !selectedGeneratedAssetId) {
+            return;
+        }
+        const index = Number(citationButton.getAttribute('data-asset-citation-index'));
+        const asset = generatedStudioAssets.find((item) => item._id === selectedGeneratedAssetId);
+        if (asset && asset.citations && asset.citations[index]) {
+            showCitationModal(asset.citations[index]);
+        }
+    });
+}
+
+if (studioAssetViewCloseBtn) {
+    studioAssetViewCloseBtn.addEventListener('click', closeGeneratedAssetModal);
+}
+if (studioAssetCloseBtn) {
+    studioAssetCloseBtn.addEventListener('click', closeGeneratedAssetModal);
+}
+if (studioAssetDeleteBtn) {
+    studioAssetDeleteBtn.addEventListener('click', () => {
+        if (!selectedGeneratedAssetId) {
+            return;
+        }
+        generatedStudioAssets = generatedStudioAssets.filter((item) => item._id !== selectedGeneratedAssetId);
+        const card = assetContainer.querySelector(`[data-generated-asset-id="${selectedGeneratedAssetId}"]`);
+        if (card) {
+            card.remove();
+        }
+        if (!assetContainer.querySelector('.asset-card')) {
+            assetContainer.innerHTML = '<div class="empty-state">No asset yet. Use Studio controls above to generate one.</div>';
+        }
+        closeGeneratedAssetModal();
+        showNotification('Generated asset deleted.', 'success');
+    });
+}
+if (studioAssetShareBtn) {
+    studioAssetShareBtn.addEventListener('click', () => {
+        showNotification('Share will be enabled soon.', 'info');
+    });
 }
 
 function createReportCard(report) {
@@ -379,15 +629,15 @@ function createReportCard(report) {
     card.className = 'report-card';
 
     const deptIcons = {
-        engineering: '⚙️',
-        sales: '📈',
-        marketing: '📢',
-        hr: '👥',
-        operations: '🔧',
-        executive: '💼',
+        engineering: '<span class="material-symbols-outlined">settings</span>',
+        sales: '<span class="material-symbols-outlined">trending_up</span>',
+        marketing: '<span class="material-symbols-outlined">campaign</span>',
+        hr: '<span class="material-symbols-outlined">group</span>',
+        operations: '<span class="material-symbols-outlined">build</span>',
+        executive: '<span class="material-symbols-outlined">business_center</span>',
     };
 
-    const icon = deptIcons[report.department] || '📊';
+    const icon = deptIcons[report.department] || '<span class="material-symbols-outlined">bar_chart</span>';
     const deptName = report.department.charAt(0).toUpperCase() + report.department.slice(1);
 
     card.innerHTML = `
@@ -443,22 +693,196 @@ newAnalysisBtn.addEventListener('click', () => {
     fileInput.value = '';
     updateLoadedFilesUI();
     chatPrompt.value = '';
-    studioPrompt.value = '';
+    if (studioModalPrompt) {
+        studioModalPrompt.value = '';
+    }
     document.querySelectorAll('input[name="department"]').forEach((cb) => {
         cb.checked = ['engineering', 'sales', 'marketing'].includes(cb.value);
     });
 
     assetContainer.innerHTML = '<div class="empty-state">No asset yet. Use Studio controls above to generate one.</div>';
+    generatedStudioAssets = [];
+    closeGeneratedAssetModal();
     appendBubble('Workspace reset. You can ask general questions or upload temporary docs anytime.', 'assistant');
     showNotification('Workspace reset complete.', 'success');
 });
 
-function appendBubble(text, role = 'assistant') {
+function parseMarkdown(text) {
+    const escapeHtml = (value) => value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+    const applyInlineMarkdown = (value) => {
+        let html = value;
+        // Code spans first so other markdown does not alter code content.
+        html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+        html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
+        html = html.replace(/\*([^\s*][^*]*?)\*/g, '<em>$1</em>');
+        html = html.replace(/\b_([^\s_][^_]*?)_\b/g, '<em>$1</em>');
+        return html;
+    };
+
+    const lines = text.split('\n');
+    const blocks = [];
+    let i = 0;
+
+    while (i < lines.length) {
+        const rawLine = lines[i] || '';
+        const trimmed = rawLine.trim();
+
+        // Skip blank lines between blocks.
+        if (!trimmed) {
+            i += 1;
+            continue;
+        }
+
+        // Fenced code block
+        if (trimmed.startsWith('```')) {
+            const codeLines = [];
+            i += 1;
+            while (i < lines.length && !lines[i].trim().startsWith('```')) {
+                codeLines.push(lines[i]);
+                i += 1;
+            }
+            if (i < lines.length) {
+                i += 1; // consume closing ```
+            }
+            blocks.push(`<pre><code>${escapeHtml(codeLines.join('\n'))}</code></pre>`);
+            continue;
+        }
+
+        // Unordered list: *, -, or bullet symbol prefix.
+        if (/^(\*|-|•)\s+/.test(trimmed)) {
+            const items = [];
+            while (i < lines.length && /^(\*|-|•)\s+/.test((lines[i] || '').trim())) {
+                const itemText = (lines[i] || '').trim().replace(/^(\*|-|•)\s+/, '');
+                items.push(`<li>${applyInlineMarkdown(escapeHtml(itemText))}</li>`);
+                i += 1;
+            }
+            blocks.push(`<ul>${items.join('')}</ul>`);
+            continue;
+        }
+
+        // Ordered list: 1. 2. etc.
+        if (/^\d+\.\s+/.test(trimmed)) {
+            const items = [];
+            while (i < lines.length && /^\d+\.\s+/.test((lines[i] || '').trim())) {
+                const itemText = (lines[i] || '').trim().replace(/^\d+\.\s+/, '');
+                items.push(`<li>${applyInlineMarkdown(escapeHtml(itemText))}</li>`);
+                i += 1;
+            }
+            blocks.push(`<ol>${items.join('')}</ol>`);
+            continue;
+        }
+
+        // Paragraph block (collect until blank line or list/code start).
+        const paragraphLines = [];
+        while (i < lines.length) {
+            const line = lines[i] || '';
+            const nextTrimmed = line.trim();
+            if (!nextTrimmed) {
+                break;
+            }
+            if (nextTrimmed.startsWith('```') || /^(\*|-|•)\s+/.test(nextTrimmed) || /^\d+\.\s+/.test(nextTrimmed)) {
+                break;
+            }
+            paragraphLines.push(escapeHtml(line));
+            i += 1;
+        }
+        const paragraph = applyInlineMarkdown(paragraphLines.join('<br>'));
+        blocks.push(`<p>${paragraph}</p>`);
+    }
+
+    return blocks.join('');
+}
+
+function appendBubble(text, role = 'assistant', citations = []) {
     const bubble = document.createElement('div');
     bubble.className = `bubble bubble-${role}`;
-    bubble.textContent = text;
+    
+    // Parse markdown and render as HTML
+    const formattedText = parseMarkdown(text);
+    bubble.innerHTML = formattedText;
+    
+    // Add citations if present
+    if (citations && citations.length > 0) {
+        const citationsContainer = document.createElement('div');
+        citationsContainer.className = 'citations-container';
+        citationsContainer.innerHTML = '<div class="citations-label">Sources:</div>';
+        
+        const citationsList = document.createElement('div');
+        citationsList.className = 'citations-list';
+        
+        citations.forEach(citation => {
+            const citationBtn = document.createElement('button');
+            citationBtn.className = 'citation-badge';
+            citationBtn.textContent = `[${citation.citation_id}] ${citation.filename}`;
+            citationBtn.title = citation.text_preview;
+            citationBtn.onclick = () => showCitationModal(citation);
+            citationsList.appendChild(citationBtn);
+        });
+        
+        citationsContainer.appendChild(citationsList);
+        bubble.appendChild(citationsContainer);
+    }
+    
     chatThread.appendChild(bubble);
     chatThread.scrollTop = chatThread.scrollHeight;
+}
+
+// Show citation modal with excerpt
+function showCitationModal(citation) {
+    // Create modal if not exists
+    let modal = document.getElementById('citationModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'citationModal';
+        modal.className = 'modal';
+        modal.innerHTML = `
+            <div class="modal-content citation-modal">
+                <div class="modal-header">
+                    <h3>Source Citation</h3>
+                    <button class="modal-close" onclick="document.getElementById('citationModal').style.display='none'">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="citation-info">
+                        <p><strong>File:</strong> <span id="citationFilename"></span></p>
+                        <p><strong>Relevance:</strong> <span id="citationRelevance"></span></p>
+                    </div>
+                    <div class="citation-excerpt">
+                        <h4>Excerpt:</h4>
+                        <pre id="citationText"></pre>
+                    </div>
+                    <div class="citation-actions">
+                        <button class="btn-secondary" onclick="openFullDocument(document.getElementById('citationModal').dataset.fileId)">View Full Document</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        
+        // Close on outside click
+        modal.onclick = (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        };
+    }
+    
+    // Populate modal with citation data
+    document.getElementById('citationFilename').textContent = citation.filename;
+    document.getElementById('citationRelevance').textContent = `${(citation.relevance_score * 100).toFixed(1)}%`;
+    document.getElementById('citationText').textContent = citation.text_preview;
+    modal.dataset.fileId = citation.file_id;
+    
+    modal.style.display = 'block';
+}
+
+// Open full document in new tab
+function openFullDocument(fileId) {
+    window.open(`/api/file/${fileId}/open`, '_blank');
 }
 
 function formatFileSize(bytes) {

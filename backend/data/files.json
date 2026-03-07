@@ -83,6 +83,48 @@
       "is_permanent": true,
       "expires_at": null,
       "uploaded_at": "2026-03-07T02:54:33.479580"
+    },
+    "fc6aa909-d2df-4597-bfde-3dc399c6d7ec": {
+      "file_id": "fc6aa909-d2df-4597-bfde-3dc399c6d7ec",
+      "filename": "Engineering Company Financial Documents Generated.pdf",
+      "file_type": ".pdf",
+      "size": 49643,
+      "classification": "public_company",
+      "uploaded_by": "u_admin_001",
+      "file_path": "uploads/fc6aa909-d2df-4597-bfde-3dc399c6d7ec_Engineering Company Financial Documents Generated.pdf",
+      "ai_summary": "Apex Bridge & Infrastructure Group Balance Sheet",
+      "file_type_category": "permanent",
+      "is_permanent": true,
+      "expires_at": null,
+      "uploaded_at": "2026-03-07T08:36:45.299173"
+    },
+    "1d894087-5b30-4c6e-8b13-d5135bae3df6": {
+      "file_id": "1d894087-5b30-4c6e-8b13-d5135bae3df6",
+      "filename": "Engineering Company Financial Documents Generated - Mar 2026",
+      "file_type": ".pdf",
+      "size": 49643,
+      "classification": "public_company",
+      "uploaded_by": "u_admin_001",
+      "file_path": "uploads/1d894087-5b30-4c6e-8b13-d5135bae3df6_Engineering Company Financial Documents Generated.pdf",
+      "ai_summary": "Apex Bridge & Infrastructure Group Balance Sheet",
+      "file_type_category": "permanent",
+      "is_permanent": true,
+      "expires_at": null,
+      "uploaded_at": "2026-03-07T08:37:35.971590"
+    },
+    "393fa20c-a691-4578-80ba-dbf180e88a15": {
+      "file_id": "393fa20c-a691-4578-80ba-dbf180e88a15",
+      "filename": "Engineering Company Financial Documents Generated.pdf",
+      "file_type": ".pdf",
+      "size": 49643,
+      "classification": "public_company",
+      "uploaded_by": "u_emp_001",
+      "file_path": "uploads/393fa20c-a691-4578-80ba-dbf180e88a15_Engineering Company Financial Documents Generated.pdf",
+      "ai_summary": "Balance Sheet - December 31, 2025",
+      "file_type_category": "temporary",
+      "is_permanent": false,
+      "expires_at": null,
+      "uploaded_at": "2026-03-07T09:31:36.033841"
     }
   }
 }

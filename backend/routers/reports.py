@@ -11,6 +11,13 @@ from backend.models.schemas import (
     StudioResponse,
     FileClassification,
     FileMetadata,
+    Citation,
+    Role,
+    Department,
+    AlertMetric,
+    QuickAlertCreateRequest,
+    AlertUpdateRequest,
+    AlertResponse,
 )
 from backend.services.document_processor import DocumentProcessor
 from backend.services.gemini_service import GeminiService
@@ -32,6 +39,14 @@ from backend.services.file_storage_service import (
     get_user_files,
     delete_file as delete_file_from_storage,
     update_file_summary,
+)
+from backend.services.alerts_storage_service import (
+    create_alert,
+    list_alerts_for_user,
+    get_alert,
+    update_alert_status,
+    delete_alert,
+    list_recent_triggers,
 )
 import os
 import mimetypes
@@ -55,6 +70,63 @@ class SummaryRequest(BaseModel):
 file_metadata_store = {}
 # Maps file_id -> file path/type for document processing
 file_data_store = {}
+
+ROLE_ALERT_METRICS = {
+    Role.EMPLOYEE: [
+        AlertMetric.REVENUE,
+        AlertMetric.DEPARTMENT_SPEND,
+        AlertMetric.BUDGET_VARIANCE_PERCENT,
+    ],
+    Role.FINANCE: list(AlertMetric),
+    Role.MANAGEMENT: [
+        AlertMetric.REVENUE,
+        AlertMetric.OPERATING_EXPENSE,
+        AlertMetric.DEPARTMENT_SPEND,
+        AlertMetric.CASH_BALANCE,
+        AlertMetric.BURN_RATE,
+        AlertMetric.BUDGET_VARIANCE_PERCENT,
+    ],
+    Role.ADMIN: list(AlertMetric),
+}
+
+
+def _allowed_alert_metrics_for_role(role: Role) -> List[AlertMetric]:
+    return ROLE_ALERT_METRICS.get(role, [AlertMetric.REVENUE])
+
+
+def _allowed_departments_for_user(user) -> List[Department]:
+    if user.role in [Role.FINANCE, Role.MANAGEMENT, Role.ADMIN]:
+        return list(Department)
+    if user.department:
+        return [user.department]
+    return [Department.OPERATIONS]
+
+
+def _validate_alert_scope(user, scope_department: Optional[Department]):
+    if not scope_department:
+        return
+    allowed_departments = _allowed_departments_for_user(user)
+    if scope_department not in allowed_departments:
+        raise HTTPException(status_code=403, detail="You cannot create alerts for this department")
+
+
+def _map_alert_record_to_response(record: dict) -> AlertResponse:
+    return AlertResponse(
+        alert_id=record["alert_id"],
+        alert_name=record["alert_name"],
+        metric=record["metric"],
+        condition=record["condition"],
+        threshold_value=record["threshold_value"],
+        time_window=record["time_window"],
+        scope_department=record.get("scope_department"),
+        severity=record["severity"],
+        delivery_channels=record.get("delivery_channels", []),
+        digest_mode=record["digest_mode"],
+        status=record["status"],
+        created_by=record["created_by"],
+        created_at=record["created_at"],
+        last_triggered_at=record.get("last_triggered_at"),
+    )
 
 def load_files_from_json():
     """Load all files from JSON database into memory cache"""
@@ -400,6 +472,7 @@ async def chat_with_financial_data(
     Free-form Q&A against uploaded financial data with semantic search.
     Uses RAG (Retrieval-Augmented Generation) to find relevant chunks.
     Access controlled based on file classification and user role.
+    Now includes smart citations linking to source documents.
     """
     try:
         # Get authenticated user context from cookie/session
@@ -417,19 +490,41 @@ async def chat_with_financial_data(
         contexts: List[str] = []
         valid_files: List[str] = []
         skipped_files: List[str] = []
+        all_citations: List[Dict] = []  # Collect citations from all files
 
         for file_id in target_ids:
             # Skip missing/forbidden files instead of failing the whole chat.
             try:
                 _check_file_access(file_id, user_context)
-                rag_context = await rag_service.get_context_for_query(file_id, request.question)
+                
+                # Get context WITH citation metadata
+                rag_context, citation_metadata = await rag_service.get_context_with_citations(file_id, request.question)
+                
                 _, document_content = await _get_document_content(file_id)
                 financial_text = document_content.get("text", "")
                 selected_context = (
                     rag_context if rag_context and rag_context != "No relevant context found." else financial_text
                 )
+                
                 if selected_context and selected_context.strip():
                     contexts.append(selected_context.strip())
+                    
+                    # Collect citations for this file
+                    if citation_metadata:
+                        file_info = file_storage_service.get_file(file_id)
+                        filename = file_info.get('filename', 'Unknown') if file_info else 'Unknown'
+                        
+                        for citation in citation_metadata:
+                            all_citations.append({
+                                'file_id': file_id,
+                                'filename': filename,
+                                'chunk_id': citation['chunk_id'],
+                                'start_char': citation['start_char'],
+                                'end_char': citation['end_char'],
+                                'text': citation['text'],
+                                'similarity': citation['similarity']
+                            })
+                
                 valid_files.append(file_id)
             except HTTPException:
                 skipped_files.append(file_id)
@@ -465,9 +560,25 @@ async def chat_with_financial_data(
                 + "\n\nNote: Previously uploaded temporary files were unavailable, so this response is based on general guidance."
             )
 
+        # Format citations with sequential IDs
+        citations = [
+            Citation(
+                citation_id=i + 1,
+                file_id=cit['file_id'],
+                filename=cit['filename'],
+                chunk_id=cit['chunk_id'],
+                start_char=cit['start_char'],
+                end_char=cit['end_char'],
+                relevance_score=cit['similarity'],
+                text_preview=cit['text'][:200] + "..." if len(cit['text']) > 200 else cit['text']
+            )
+            for i, cit in enumerate(all_citations)
+        ]
+        
         return ChatResponse(
             answer=answer,
             timestamp=datetime.now().isoformat(),
+            citations=citations,
         )
     except HTTPException:
         raise
@@ -484,6 +595,7 @@ async def generate_studio_asset(
     Generate non-chat assets from the Studio panel with semantic search.
     Uses RAG to retrieve relevant document sections for artifact generation.
     Access controlled based on file classification and user role.
+    Now includes smart citations linking to source documents.
     """
     try:
         # Get authenticated user context from cookie/session
@@ -495,8 +607,8 @@ async def generate_studio_asset(
         # Build search query from asset type and custom prompt
         search_query = f"{request.asset_type.value.replace('_', ' ')} {request.custom_prompt}".strip()
         
-        # Get relevant context using RAG semantic search
-        rag_context = await rag_service.get_context_for_query(request.file_id, search_query)
+        # Get relevant context using RAG semantic search WITH citations
+        rag_context, citation_metadata = await rag_service.get_context_with_citations(request.file_id, search_query)
         
         # Use fallback to full document if RAG retrieval fails
         _, document_content = await _get_document_content(request.file_id)
@@ -509,22 +621,58 @@ async def generate_studio_asset(
         department_context = DEPARTMENT_CONTEXTS.get(department_value, "")
         custom_prompt = request.custom_prompt or ""
 
-        content = await gemini_service.generate_studio_asset(
-            financial_data=context_to_use,
-            asset_type=request.asset_type.value,
-            department=department_value,
-            custom_prompt=f"{custom_prompt}\n\nDepartment Context:\n{department_context}",
-        )
+        image_data_url = None
+        if request.asset_type.value == "infographic_outline":
+            infographic = await gemini_service.generate_infographic_image(
+                financial_data=context_to_use,
+                department=department_value,
+                custom_prompt=f"{custom_prompt}\n\nDepartment Context:\n{department_context}",
+                complexity=request.complexity.value,
+                length=request.length.value,
+            )
+            content = infographic.get("summary", "Infographic generated.")
+            image_data_url = infographic.get("image_data_url")
+        else:
+            content = await gemini_service.generate_studio_asset(
+                financial_data=context_to_use,
+                asset_type=request.asset_type.value,
+                department=department_value,
+                custom_prompt=f"{custom_prompt}\n\nDepartment Context:\n{department_context}",
+                complexity=request.complexity.value,
+                length=request.length.value,
+            )
 
         title = f"{request.asset_type.value.replace('_', ' ').title()}"
         if department_value != "all":
             title = f"{title} - {department_value.title()}"
+        
+        # Format citations
+        citations = []
+        if citation_metadata:
+            file_info = get_file(request.file_id)
+            filename = file_info.get('filename', 'Unknown') if file_info else 'Unknown'
+            
+            citations = [
+                Citation(
+                    citation_id=i + 1,
+                    file_id=request.file_id,
+                    filename=filename,
+                    chunk_id=cit['chunk_id'],
+                    start_char=cit['start_char'],
+                    end_char=cit['end_char'],
+                    relevance_score=cit['similarity'],
+                    text_preview=cit['text'][:200] + "..." if len(cit['text']) > 200 else cit['text']
+                )
+                for i, cit in enumerate(citation_metadata)
+            ]
 
         return StudioResponse(
             asset_type=request.asset_type,
             title=title,
             content=content,
             timestamp=datetime.now().isoformat(),
+            image_data_url=image_data_url,
+            citations=citations,
         )
     except HTTPException:
         raise
@@ -797,6 +945,54 @@ async def open_file(
         raise HTTPException(status_code=500, detail=f"Failed to open file: {str(e)}")
 
 
+@router.get("/file/{file_id}/excerpt")
+async def get_file_excerpt(
+    request: Request,
+    file_id: str,
+    start_char: int,
+    end_char: int,
+):
+    """
+    Get a specific excerpt/chunk from a document for citation viewing.
+    Returns the text content and surrounding context.
+    """
+    try:
+        user_context = get_accessible_user_context(request)
+        _check_file_access(file_id, user_context)
+
+        _, document_content = await _get_document_content(file_id)
+        full_text = document_content.get("text", "")
+        
+        if not full_text:
+            raise HTTPException(status_code=404, detail="Document text not available")
+        
+        # Add some context padding around the requested excerpt
+        context_padding = 300
+        padded_start = max(0, start_char - context_padding)
+        padded_end = min(len(full_text), end_char + context_padding)
+        
+        excerpt = full_text[start_char:end_char]
+        context = full_text[padded_start:padded_end]
+        
+        file_info = get_file(file_id)
+        filename = file_info.get('filename', 'Unknown') if file_info else 'Unknown'
+        
+        return {
+            "file_id": file_id,
+            "filename": filename,
+            "excerpt": excerpt,
+            "context": context,
+            "start_char": start_char,
+            "end_char": end_char,
+            "padded_start": padded_start,
+            "padded_end": padded_end,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get excerpt: {str(e)}")
+
+
 @router.delete("/file/{file_id}")
 async def delete_uploaded_file(
     request: Request,
@@ -856,3 +1052,122 @@ async def delete_uploaded_file(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"File deletion failed: {str(e)}")
+
+
+@router.get("/alerts")
+async def get_alerts(request: Request):
+    """List quick alerts visible to the current user and helper dropdown data."""
+    try:
+        user_context = get_accessible_user_context(request)
+        current_user = build_user_from_context(user_context)
+
+        alerts = list_alerts_for_user(current_user.user_id, current_user.role.value)
+        triggers = list_recent_triggers(current_user.user_id, current_user.role.value)
+        allowed_metrics = [metric.value for metric in _allowed_alert_metrics_for_role(current_user.role)]
+        allowed_departments = [dept.value for dept in _allowed_departments_for_user(current_user)]
+
+        return {
+            "alerts": [_map_alert_record_to_response(item).dict() for item in alerts],
+            "recent_triggers": triggers,
+            "allowed_metrics": allowed_metrics,
+            "allowed_departments": allowed_departments,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch alerts: {str(e)}")
+
+
+@router.post("/alerts", response_model=AlertResponse)
+async def create_quick_alert(request_http: Request, request: QuickAlertCreateRequest):
+    """Create a quick dropdown alert with role-based metric and scope checks."""
+    try:
+        user_context = get_accessible_user_context(request_http)
+        current_user = build_user_from_context(user_context)
+
+        allowed_metrics = _allowed_alert_metrics_for_role(current_user.role)
+        if request.metric not in allowed_metrics:
+            raise HTTPException(status_code=403, detail="You cannot create alerts for this metric")
+
+        _validate_alert_scope(current_user, request.scope_department)
+
+        if request.threshold_value < 0:
+            raise HTTPException(status_code=400, detail="Threshold value must be non-negative")
+
+        now = datetime.now().isoformat()
+        payload = {
+            "alert_id": str(uuid.uuid4()),
+            "alert_name": request.alert_name.strip(),
+            "metric": request.metric.value,
+            "condition": request.condition.value,
+            "threshold_value": request.threshold_value,
+            "time_window": request.time_window.value,
+            "scope_department": request.scope_department.value if request.scope_department else None,
+            "severity": request.severity.value,
+            "delivery_channels": [channel.value for channel in request.delivery_channels],
+            "digest_mode": request.digest_mode.value,
+            "status": "active",
+            "created_by": current_user.user_id,
+            "created_at": now,
+            "updated_at": now,
+            "last_triggered_at": None,
+        }
+
+        created = create_alert(payload)
+        return _map_alert_record_to_response(created)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create alert: {str(e)}")
+
+
+@router.patch("/alerts/{alert_id}", response_model=AlertResponse)
+async def patch_alert_status(request_http: Request, alert_id: str, request: AlertUpdateRequest):
+    """Pause or activate an existing alert owned by the user (or admin)."""
+    try:
+        user_context = get_accessible_user_context(request_http)
+        current_user = build_user_from_context(user_context)
+
+        alert = get_alert(alert_id)
+        if not alert:
+            raise HTTPException(status_code=404, detail="Alert not found")
+
+        is_owner = alert.get("created_by") == current_user.user_id
+        if not is_owner and current_user.role != Role.ADMIN:
+            raise HTTPException(status_code=403, detail="You can only update your own alerts")
+
+        updated = update_alert_status(alert_id, request.status.value)
+        if not updated:
+            raise HTTPException(status_code=404, detail="Alert not found")
+
+        return _map_alert_record_to_response(updated)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update alert: {str(e)}")
+
+
+@router.delete("/alerts/{alert_id}")
+async def remove_alert(request_http: Request, alert_id: str):
+    """Delete an alert owned by the user (or admin)."""
+    try:
+        user_context = get_accessible_user_context(request_http)
+        current_user = build_user_from_context(user_context)
+
+        alert = get_alert(alert_id)
+        if not alert:
+            raise HTTPException(status_code=404, detail="Alert not found")
+
+        is_owner = alert.get("created_by") == current_user.user_id
+        if not is_owner and current_user.role != Role.ADMIN:
+            raise HTTPException(status_code=403, detail="You can only delete your own alerts")
+
+        ok = delete_alert(alert_id)
+        if not ok:
+            raise HTTPException(status_code=404, detail="Alert not found")
+
+        return {"success": True, "alert_id": alert_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete alert: {str(e)}")

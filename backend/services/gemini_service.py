@@ -2,6 +2,8 @@ from google.genai import Client
 from google.genai.types import Part
 import os
 import asyncio
+import base64
+import re
 from functools import partial
 from typing import Optional
 from backend.prompts.templates import (
@@ -9,6 +11,7 @@ from backend.prompts.templates import (
     build_financial_analysis_prompt,
     build_chat_question_prompt,
     build_studio_asset_prompt,
+    build_infographic_svg_prompt,
     build_document_summary_prompt,
 )
 
@@ -229,6 +232,8 @@ If this is a scanned document with images of text, use OCR to extract the text."
         asset_type: str,
         department: str,
         custom_prompt: str,
+        complexity: str,
+        length: str,
     ) -> str:
         """Generate a non-chat artifact in Studio mode (brief, email, outline, etc.)."""
         prompt = build_studio_asset_prompt(
@@ -236,6 +241,8 @@ If this is a scanned document with images of text, use OCR to extract the text."
             asset_type=asset_type,
             department=department,
             custom_prompt=custom_prompt,
+            complexity=complexity,
+            length=length,
         )
         response = await self._generate_content(prompt)
         return response.text
@@ -247,3 +254,66 @@ If this is a scanned document with images of text, use OCR to extract the text."
         prompt = build_document_summary_prompt(content)
         response = await self._generate_content(prompt)
         return response.text
+
+    def _extract_svg_markup(self, raw_text: str) -> Optional[str]:
+        if not raw_text:
+            return None
+
+        text = raw_text.strip()
+        if text.startswith("```"):
+            text = re.sub(r"^```[a-zA-Z]*", "", text).strip()
+            text = re.sub(r"```$", "", text).strip()
+
+        start = text.find("<svg")
+        end = text.rfind("</svg>")
+        if start == -1 or end == -1:
+            return None
+
+        svg = text[start : end + len("</svg>")]
+        # Strip script blocks defensively.
+        svg = re.sub(r"<script[\\s\\S]*?</script>", "", svg, flags=re.IGNORECASE)
+
+        if "xmlns=" not in svg:
+            svg = svg.replace("<svg", '<svg xmlns="http://www.w3.org/2000/svg"', 1)
+
+        return svg
+
+    def _svg_to_data_url(self, svg_markup: str) -> str:
+        encoded = base64.b64encode(svg_markup.encode("utf-8")).decode("ascii")
+        return f"data:image/svg+xml;base64,{encoded}"
+
+    async def generate_infographic_image(
+        self,
+        financial_data: str,
+        department: str,
+        custom_prompt: str,
+        complexity: str,
+        length: str,
+    ) -> dict:
+        prompt = build_infographic_svg_prompt(
+            financial_data=financial_data,
+            department=department,
+            custom_prompt=custom_prompt,
+            complexity=complexity,
+            length=length,
+        )
+
+        response = await self._generate_content(prompt)
+        svg_markup = self._extract_svg_markup(response.text if response else "")
+
+        if not svg_markup:
+            # Fallback: deterministic SVG keeps UX functional even when model format drifts.
+            fallback_title = f"{department.title()} Financial Snapshot"
+            svg_markup = f'''<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
+  <rect width="1200" height="800" fill="#121313"/>
+  <text x="60" y="90" font-family="Arial" font-size="42" fill="#fe742e">{fallback_title}</text>
+  <rect x="60" y="140" width="1080" height="560" rx="16" fill="#1c1d1e" stroke="#343638"/>
+  <text x="90" y="210" font-family="Arial" font-size="28" fill="#ece7e2">Infographic generation fallback</text>
+  <text x="90" y="260" font-family="Arial" font-size="22" fill="#b8b8b8">The model did not return valid SVG this time.</text>
+  <text x="90" y="300" font-family="Arial" font-size="22" fill="#b8b8b8">Try again with a more specific prompt for metrics/trends.</text>
+</svg>'''
+
+        return {
+            "image_data_url": self._svg_to_data_url(svg_markup),
+            "summary": f"Infographic generated for {department.title()}.",
+        }

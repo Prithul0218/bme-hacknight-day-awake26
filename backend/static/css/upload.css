@@ -93,6 +93,10 @@ body {
     margin-bottom: 1rem;
 }
 
+.upload-icon.material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 200, 'GRAD' 0, 'opsz' 48;
+}
+
 .upload-text {
     font-size: 1.1rem;
     font-weight: 500;
@@ -133,6 +137,31 @@ body {
 
 .file-icon {
     font-size: 2rem;
+}
+
+.file-icon.material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+}
+
+.file-icon-small {
+    font-size: 1.2rem;
+    margin-right: 8px;
+    vertical-align: middle;
+    color: #b4aeaa;
+}
+
+.file-icon-small.material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20;
+}
+
+.empty-state-icon {
+    font-size: 4rem;
+    color: #b4aeaa;
+    margin-bottom: 1rem;
+}
+
+.empty-state-icon.material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 200, 'GRAD' 0, 'opsz' 48;
 }
 
 .file-info {

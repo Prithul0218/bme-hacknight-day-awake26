@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FinanceBuddy - AI Financial Translator</title>
     <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
 </head>
 <body>
     <div class="app-shell">
@@ -15,10 +16,17 @@
             </div>
             <div class="header-actions">
                 {% if user.role != "employee" %}
-                <a href="/file-manager" class="upload-link">📁 File Manager</a>
+                <a href="/file-manager" class="upload-link">
+                    <span class="material-symbols-outlined">folder</span> File Manager
+                </a>
                 {% endif %}
-                <a href="/auto-reports" class="upload-link">🗓️ Auto Reports</a>
-                <!-- <div class="status-pill">Auto Feed: Live</div> -->
+                <a href="/auto-reports" class="upload-link">
+                    <span class="material-symbols-outlined">event_note</span> Auto Reports
+                </a>
+                <a href="/alerts" class="upload-link">
+                    <span class="material-symbols-outlined">notifications_active</span> Alerts
+                </a>
+<!-- <div class="status-pill">Auto Feed: Live</div> -->
                 <!-- <div class="user-pill">{{ user.name }} ({{ user.role }})</div> -->
                 <div class="user-pill">{{ user.name }} 
                 <a href="/logout" class="logout-link">Logout</a></div>
@@ -123,40 +131,107 @@
                 </div>
 
                 <div class="studio-controls">
-                    <label class="studio-label" for="assetType">Asset Type</label>
-                    <select id="assetType" class="studio-input">
-                        <option value="department_report">Department Report</option>
-                        <option value="executive_brief">Executive Brief</option>
-                        <option value="email_draft">Email Draft</option>
-                        <option value="infographic_outline">Infographic Outline</option>
-                        <option value="slide_outline">Slide Outline</option>
-                    </select>
-
-                    <label class="studio-label" for="studioDepartment">Target Department</label>
-                    <select id="studioDepartment" class="studio-input">
-                        <option value="">All Departments</option>
-                        <option value="engineering">Engineering</option>
-                        <option value="sales">Sales</option>
-                        <option value="marketing">Marketing</option>
-                        <option value="hr">HR</option>
-                        <option value="operations">Operations</option>
-                        <option value="executive">Executive</option>
-                    </select>
-
-                    <label class="studio-label" for="studioPrompt">Studio Prompt</label>
-                    <textarea id="studioPrompt" class="studio-input" rows="3" placeholder="Optional extra instructions, tone, audience, output style..."></textarea>
-
-                    <button id="studioGenerateBtn" class="btn-primary" type="button">Generate Asset</button>
+                    <div id="studioAssetIcons" class="studio-icon-grid" aria-label="Studio asset type picker">
+                        <button type="button" class="studio-icon-btn" data-asset-type="department_report" data-asset-label="Department Report">
+                            <span class="material-symbols-outlined studio-icon-glyph">description</span>
+                            <span class="studio-icon-label">Department Report</span>
+                        </button>
+                        <button type="button" class="studio-icon-btn" data-asset-type="executive_brief" data-asset-label="Executive Brief">
+                            <span class="material-symbols-outlined studio-icon-glyph">push_pin</span>
+                            <span class="studio-icon-label">Executive Brief</span>
+                        </button>
+                        <button type="button" class="studio-icon-btn" data-asset-type="email_draft" data-asset-label="Email Draft">
+                            <span class="material-symbols-outlined studio-icon-glyph">mail</span>
+                            <span class="studio-icon-label">Email Draft</span>
+                        </button>
+                        <button type="button" class="studio-icon-btn" data-asset-type="slide_outline" data-asset-label="Slide Outline">
+                            <span class="material-symbols-outlined studio-icon-glyph">slideshow</span>
+                            <span class="studio-icon-label">Slide Outline</span>
+                        </button>
+                        <button type="button" class="studio-icon-btn" data-asset-type="infographic_outline" data-asset-label="Infographic">
+                            <span class="material-symbols-outlined studio-icon-glyph">bar_chart</span>
+                            <span class="studio-icon-label">Infographic</span>
+                        </button>
+                    </div>
+                    <!-- <p class="studio-picker-help">Pick an asset icon to configure and generate.</p> -->
                 </div>
-
-                <p class="panel-subtitle">Generated assets</p>
-                <div id="assetContainer" class="reports-container">
+                
+                <hr style="border: 1px solid #3c3a3b;">
+                <p class="panel-subtitle" style="margin-top: 10px;">Generated assets</p>
+                <div id="assetContainer" class="reports-container"  style="padding-top: 7px;">
                     <div class="empty-state">No asset yet. Use Studio controls above to generate one.</div>
                 </div>
             </aside>
         </div>
 
         <div id="toast" class="toast hidden"></div>
+    </div>
+
+    <div id="studioConfigModal" class="modal" aria-hidden="true">
+        <div class="modal-content studio-config-modal">
+            <div class="modal-header">
+                <h3 id="studioConfigTitle">Generate Studio Asset</h3>
+                <button id="studioConfigCloseBtn" class="modal-close" type="button">&times;</button>
+            </div>
+            <div class="modal-body">
+                <label class="studio-label" for="studioModalDepartment">Target Department</label>
+                <select id="studioModalDepartment" class="studio-input">
+                    <option value="">All Departments</option>
+                    <option value="engineering">Engineering</option>
+                    <option value="sales">Sales</option>
+                    <option value="marketing">Marketing</option>
+                    <option value="hr">HR</option>
+                    <option value="operations">Operations</option>
+                    <option value="executive">Executive</option>
+                </select>
+
+                <label class="studio-label" for="studioModalPrompt">Studio Prompt</label>
+                <textarea id="studioModalPrompt" class="studio-input" rows="4" placeholder="Optional extra instructions, tone, audience, output style..."></textarea>
+
+                <div class="studio-modal-row">
+                    <div>
+                        <label class="studio-label" for="studioModalComplexity">Complexity</label>
+                        <select id="studioModalComplexity" class="studio-input">
+                            <option value="brief">Brief</option>
+                            <option value="standard" selected>Standard</option>
+                            <option value="detailed">Detailed</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="studio-label" for="studioModalLength">Length</label>
+                        <select id="studioModalLength" class="studio-input">
+                            <option value="short">Short</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="long">Long</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="studio-modal-actions">
+                    <button id="studioConfigCancelBtn" class="btn-secondary" type="button">Cancel</button>
+                    <button id="studioConfigGenerateBtn" class="btn-primary" type="button">Generate</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="studioAssetViewModal" class="modal" aria-hidden="true">
+        <div class="modal-content studio-asset-view-modal">
+            <div class="modal-header">
+                <h3 id="studioAssetViewTitle">Generated Asset</h3>
+                <button id="studioAssetViewCloseBtn" class="modal-close" type="button">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="studioAssetViewMeta" class="asset-view-meta"></div>
+                <div id="studioAssetViewContent" class="asset-view-content"></div>
+                <div id="studioAssetViewCitations" class="asset-view-citations hidden"></div>
+                <div class="studio-modal-actions">
+                    <button id="studioAssetShareBtn" class="btn-secondary" type="button">Share</button>
+                    <button id="studioAssetDeleteBtn" class="btn-secondary" type="button">Delete</button>
+                    <button id="studioAssetCloseBtn" class="btn-primary" type="button">Close</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>

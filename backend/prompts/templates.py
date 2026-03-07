@@ -77,7 +77,7 @@ def build_financial_analysis_prompt(content: str) -> str:
 You are a financial analyst AI. Analyze the following financial document and provide:
 1. A brief summary of the financial data
 2. Key financial metrics identified
-3. Notable trends or patterns (none of your own recommendations)
+3. Notable trends or patterns in previous similar documents (none of your own recommendations)
 
 Document content:
 {content}
@@ -141,6 +141,8 @@ def build_studio_asset_prompt(
     asset_type: str,
     department: str,
     custom_prompt: str,
+    complexity: str,
+    length: str,
 ) -> str:
     return f"""
 You are a finance content studio assistant.
@@ -150,6 +152,8 @@ Financial Data:
 
 Requested Asset Type: {asset_type}
 Target Department: {department}
+Requested Complexity: {complexity}
+Requested Length: {length}
 Custom Instructions: {custom_prompt}
 
 Create a polished artifact that is ready to share internally.
@@ -161,7 +165,50 @@ Guidelines by asset type:
 - infographic_outline: structured infographic blueprint with sections, key numbers, and visual suggestions.
 - slide_outline: 6-8 slide outline with title + bullet points per slide.
 
+Complexity rules:
+- brief: straightforward language, fewer sections, minimal nuance.
+- standard: balanced depth and clarity for business readers.
+- detailed: deeper analysis, assumptions, tradeoffs, and context.
+
+Length rules:
+- short: compact output, minimal bullets/sections.
+- medium: moderate detail and examples.
+- long: expanded structure with richer detail and fuller rationale.
+
 Return plain text only.
+"""
+
+
+def build_infographic_svg_prompt(
+    financial_data: str,
+    department: str,
+    custom_prompt: str,
+    complexity: str,
+    length: str,
+) -> str:
+    return f"""
+You are a finance infographic designer.
+
+Financial Data:
+{financial_data}
+
+Target Department: {department}
+Requested Complexity: {complexity}
+Requested Length: {length}
+Custom Instructions: {custom_prompt}
+
+Task:
+- Create ONE complete standalone SVG infographic.
+- Include a title, 3-5 KPI cards, and a simple trend chart section.
+- Use a dark background and high-contrast labels.
+- Keep numbers realistic and directly grounded in the provided data.
+- Keep text concise and presentation-ready.
+- Use only safe SVG elements (svg, rect, text, line, polyline, circle, g, defs, linearGradient).
+
+Output rules:
+- Return ONLY raw SVG markup.
+- Do not wrap in markdown code fences.
+- Start with <svg and end with </svg>.
 """
 
 
