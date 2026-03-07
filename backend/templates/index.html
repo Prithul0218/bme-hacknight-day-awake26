@@ -16,6 +16,8 @@
             <div class="header-actions">
                 <a href="/upload" class="upload-link">📤 Upload Manager</a>
                 <div class="status-pill">Auto Feed: Live</div>
+                <div class="user-pill">{{ user.name }} ({{ user.role }})</div>
+                <a href="/logout" class="logout-link">Logout</a>
             </div>
         </header>
 
@@ -50,14 +52,11 @@
 
                 <div class="panel-block">
                     <h3>Access Control</h3>
-                    <p>Select your role to test access permissions.</p>
-                    <label class="studio-label" for="userRole">Your Role</label>
-                    <select id="userRole" class="studio-input">
-                        <option value="employee">Employee</option>
-                        <option value="finance">Finance</option>
-                        <option value="management">Management</option>
-                        <option value="admin">Admin</option>
-                    </select>
+                    <p>Your role is set by login. Document access level is assigned automatically.</p>
+                    <div class="file-info">
+                        <p><strong>Current Role:</strong> <span id="currentRole">{{ user.role }}</span></p>
+                        <p><strong>Auto Classification:</strong> <span id="autoClassification">{{ default_classification }}</span></p>
+                    </div>
                 </div>
 
                 <div class="panel-block">
@@ -71,13 +70,7 @@
                     <div id="fileInfo" class="file-info hidden">
                         <p><strong>Loaded:</strong> <span id="fileName"></span></p>
                         <p><strong>Size:</strong> <span id="fileSize"></span></p>
-                        <label class="studio-label" for="fileClassification">Classification</label>
-                        <select id="fileClassification" class="studio-input">
-                            <option value="public_company" selected>Public Company (All Employees)</option>
-                            <option value="finance_only">Finance Only</option>
-                            <option value="management_only">Management Only</option>
-                            <option value="admin_only">Admin Only</option>
-                        </select>
+                        <p><strong>Classification:</strong> <span id="fileClassification">{{ default_classification }}</span> (auto from role)</p>
                     </div>
                 </div>
             </aside>
@@ -163,6 +156,10 @@
         <div id="toast" class="toast hidden"></div>
     </div>
 
+    <script>
+        window.currentUserRole = "{{ user.role }}";
+        window.defaultClassification = "{{ default_classification }}";
+    </script>
     <script src="/static/js/main.js"></script>
 </body>
 </html>

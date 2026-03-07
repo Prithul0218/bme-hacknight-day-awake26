@@ -1,6 +1,7 @@
 // State
 let uploadedFileId = null;
-let userRole = 'employee'; // Default role
+let userRole = window.currentUserRole || 'employee';
+let defaultClassification = window.defaultClassification || 'public_company';
 
 // DOM
 const fileInput = document.getElementById('fileInput');
@@ -9,8 +10,7 @@ const tempUploadBtn = document.getElementById('tempUploadBtn');
 const fileInfo = document.getElementById('fileInfo');
 const fileName = document.getElementById('fileName');
 const fileSize = document.getElementById('fileSize');
-const userRoleSelect = document.getElementById('userRole');
-const fileClassificationSelect = document.getElementById('fileClassification');
+const fileClassificationText = document.getElementById('fileClassification');
 
 const chatThread = document.getElementById('chatThread');
 const chatPrompt = document.getElementById('chatPrompt');
@@ -28,11 +28,9 @@ const workspaceGrid = document.querySelector('.workspace-grid');
 const resizerLeft = document.getElementById('resizerLeft');
 const resizerRight = document.getElementById('resizerRight');
 
-// Track user role changes
-userRoleSelect.addEventListener('change', (e) => {
-    userRole = e.target.value;
-    showNotification(`Role changed to: ${userRole}`, 'success');
-});
+if (fileClassificationText) {
+    fileClassificationText.textContent = defaultClassification;
+}
 
 // Upload interactions
 fileInput.addEventListener('change', handleFileSelect);
@@ -77,14 +75,11 @@ async function uploadFile(file) {
     const formData = new FormData();
     formData.append('file', file);
 
-    const classification = fileClassificationSelect.value || 'public_company';
+    const classification = defaultClassification;
 
     try {
         const response = await fetch(`/api/upload?classification=${encodeURIComponent(classification)}`, {
             method: 'POST',
-            headers: {
-                'X-User-Role': userRole,
-            },
             body: formData,
         });
 
@@ -129,7 +124,6 @@ chatAskBtn.addEventListener('click', async () => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-User-Role': userRole,
             },
             body: JSON.stringify({
                 file_id: uploadedFileId,
@@ -175,7 +169,6 @@ studioGenerateBtn.addEventListener('click', async () => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-User-Role': userRole,
             },
             body: JSON.stringify({
                 file_id: uploadedFileId,
@@ -294,7 +287,9 @@ newAnalysisBtn.addEventListener('click', () => {
     fileInfo.classList.add('hidden');
     chatPrompt.value = '';
     studioPrompt.value = '';
-    fileClassificationSelect.value = 'public_company';
+    if (fileClassificationText) {
+        fileClassificationText.textContent = defaultClassification;
+    }
 
     document.querySelectorAll('input[name="department"]').forEach((cb) => {
         cb.checked = ['engineering', 'sales', 'marketing'].includes(cb.value);

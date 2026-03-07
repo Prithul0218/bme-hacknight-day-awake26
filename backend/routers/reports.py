@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, Header
+from fastapi import APIRouter, UploadFile, File, HTTPException, Request
 from pydantic import BaseModel
 from backend.models.schemas import (
     UploadResponse,
@@ -19,6 +19,7 @@ from backend.services.access_control import (
     can_user_access_file,
     get_accessible_user_context,
     build_user_from_context,
+    get_default_classification_for_role,
 )
 from backend.prompts.templates import DEPARTMENT_CONTEXTS
 import os
@@ -78,10 +79,9 @@ def _check_file_access(file_id: str, user_context: dict) -> FileMetadata:
 
 @router.post("/upload", response_model=UploadResponse)
 async def upload_document(
+    request: Request,
     file: UploadFile = File(...),
     classification: Optional[str] = None,
-    user_id: Optional[str] = Header(None),
-    x_user_role: Optional[str] = Header(None),
 ):
     """
     Upload a financial document (PDF, Excel, CSV) with optional classification.
@@ -92,12 +92,9 @@ async def upload_document(
     - x-user-role: Optional user role (employee, finance, management, admin)
     - user_id: Optional user ID (for future auth integration)
     """
-    # Get user context from headers or default
-    user_context = get_accessible_user_context()
-    if user_id:
-        user_context["user_id"] = user_id
-    if x_user_role:
-        user_context["role"] = x_user_role
+    # Get authenticated user context from cookie/session
+    user_context = get_accessible_user_context(request)
+    current_user = build_user_from_context(user_context)
     
     # Validate file type
     allowed_extensions = ['.pdf', '.xlsx', '.xls', '.csv']
@@ -109,17 +106,8 @@ async def upload_document(
             detail=f"File type not supported. Allowed types: {', '.join(allowed_extensions)}"
         )
     
-    # Validate and default classification
-    try:
-        file_classification = FileClassification(
-            classification or FileClassification.PUBLIC_COMPANY.value
-        )
-    except ValueError:
-        valid_classifications = [c.value for c in FileClassification]
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid classification. Must be one of: {', '.join(valid_classifications)}"
-        )
+    # Automatically assign classification from logged-in role.
+    file_classification = get_default_classification_for_role(current_user.role)
     
     # Generate unique file ID
     file_id = str(uuid.uuid4())
@@ -132,7 +120,7 @@ async def upload_document(
         content = await file.read()
         f.write(content)
     
-    uploaded_by = user_id or "anonymous"
+    uploaded_by = current_user.user_id
     now = datetime.now().isoformat()
     
     # Store metadata
@@ -174,26 +162,21 @@ async def upload_document(
         filename=file.filename,
         file_type=file_ext,
         size=len(content),
-        message=f"File uploaded successfully with {file_classification.value} classification"
+        message=f"File uploaded successfully with auto-classification: {file_classification.value}"
     )
 
 @router.post("/analyze", response_model=AnalysisResponse)
 async def analyze_document(
+    request_http: Request,
     request: AnalysisRequest,
-    user_id: Optional[str] = Header(None),
-    x_user_role: Optional[str] = Header(None),
 ):
     """
     Analyze uploaded document and generate department-specific reports.
     Access controlled based on file classification and user role.
     """
     try:
-        # Get user context from headers or default
-        user_context = get_accessible_user_context()
-        if user_id:
-            user_context["user_id"] = user_id
-        if x_user_role:
-            user_context["role"] = x_user_role
+        # Get authenticated user context from cookie/session
+        user_context = get_accessible_user_context(request_http)
         
         # Check access
         _check_file_access(request.file_id, user_context)
@@ -222,9 +205,8 @@ async def analyze_document(
 
 @router.post("/chat", response_model=ChatResponse)
 async def chat_with_financial_data(
+    request_http: Request,
     request: ChatRequest,
-    user_id: Optional[str] = Header(None),
-    x_user_role: Optional[str] = Header(None),
 ):
     """
     Free-form Q&A against uploaded financial data with semantic search.
@@ -232,12 +214,8 @@ async def chat_with_financial_data(
     Access controlled based on file classification and user role.
     """
     try:
-        # Get user context from headers or default
-        user_context = get_accessible_user_context()
-        if user_id:
-            user_context["user_id"] = user_id
-        if x_user_role:
-            user_context["role"] = x_user_role
+        # Get authenticated user context from cookie/session
+        user_context = get_accessible_user_context(request_http)
         
         # Check access
         _check_file_access(request.file_id, user_context)
@@ -272,9 +250,8 @@ async def chat_with_financial_data(
 
 @router.post("/studio", response_model=StudioResponse)
 async def generate_studio_asset(
+    request_http: Request,
     request: StudioRequest,
-    user_id: Optional[str] = Header(None),
-    x_user_role: Optional[str] = Header(None),
 ):
     """
     Generate non-chat assets from the Studio panel with semantic search.
@@ -282,12 +259,8 @@ async def generate_studio_asset(
     Access controlled based on file classification and user role.
     """
     try:
-        # Get user context from headers or default
-        user_context = get_accessible_user_context()
-        if user_id:
-            user_context["user_id"] = user_id
-        if x_user_role:
-            user_context["role"] = x_user_role
+        # Get authenticated user context from cookie/session
+        user_context = get_accessible_user_context(request_http)
         
         # Check access
         _check_file_access(request.file_id, user_context)
@@ -333,20 +306,15 @@ async def generate_studio_asset(
 
 @router.get("/reports/{file_id}")
 async def get_report(
+    request: Request,
     file_id: str,
-    user_id: Optional[str] = Header(None),
-    x_user_role: Optional[str] = Header(None),
 ):
     """
     Get metadata for a specific file.
     Access controlled based on file classification and user role.
     """
-    # Get user context from headers or default
-    user_context = get_accessible_user_context()
-    if user_id:
-        user_context["user_id"] = user_id
-    if x_user_role:
-        user_context["role"] = x_user_role
+    # Get authenticated user context from cookie/session
+    user_context = get_accessible_user_context(request)
     
     # Check access
     file_metadata = _check_file_access(file_id, user_context)
@@ -356,21 +324,16 @@ async def get_report(
 
 @router.post("/generate-summary")
 async def generate_summary(
+    request_http: Request,
     request: SummaryRequest,
-    user_id: Optional[str] = Header(None),
-    x_user_role: Optional[str] = Header(None),
 ):
     """
     Generate an AI summary of an uploaded document.
     Returns a concise summary that captures key information.
     """
     try:
-        # Get user context from headers or default
-        user_context = get_accessible_user_context()
-        if user_id:
-            user_context["user_id"] = user_id
-        if x_user_role:
-            user_context["role"] = x_user_role
+        # Get authenticated user context from cookie/session
+        user_context = get_accessible_user_context(request_http)
         
         # Check access
         _check_file_access(request.file_id, user_context)
@@ -403,14 +366,13 @@ async def generate_summary(
 
 @router.post("/upload-managed", response_model=UploadResponse)
 async def upload_managed_document(
+    request: Request,
     file: UploadFile = File(...),
     classification: Optional[str] = None,
     title: Optional[str] = None,
     storage_mode: Optional[str] = "full",
     auto_delete: Optional[bool] = False,
     summary: Optional[str] = None,
-    user_id: Optional[str] = Header(None),
-    x_user_role: Optional[str] = Header(None),
 ):
     """
     Upload a document with advanced management options.
@@ -427,12 +389,9 @@ async def upload_managed_document(
     """
     from datetime import timedelta
     
-    # Get user context from headers or default
-    user_context = get_accessible_user_context()
-    if user_id:
-        user_context["user_id"] = user_id
-    if x_user_role:
-        user_context["role"] = x_user_role
+    # Get authenticated user context from cookie/session
+    user_context = get_accessible_user_context(request)
+    current_user = build_user_from_context(user_context)
     
     # Validate file type
     allowed_extensions = ['.pdf', '.xlsx', '.xls', '.csv']
@@ -444,17 +403,8 @@ async def upload_managed_document(
             detail=f"File type not supported. Allowed types: {', '.join(allowed_extensions)}"
         )
     
-    # Validate and default classification
-    try:
-        file_classification = FileClassification(
-            classification or FileClassification.PUBLIC_COMPANY.value
-        )
-    except ValueError:
-        valid_classifications = [c.value for c in FileClassification]
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid classification. Must be one of: {', '.join(valid_classifications)}"
-        )
+    # Automatically assign classification from logged-in role.
+    file_classification = get_default_classification_for_role(current_user.role)
     
     # Validate storage mode
     if storage_mode not in ["full", "summary"]:
@@ -474,7 +424,7 @@ async def upload_managed_document(
         content = await file.read()
         f.write(content)
     
-    uploaded_by = user_id or "anonymous"
+    uploaded_by = current_user.user_id
     now = datetime.now()
     
     # Calculate expiry if auto_delete is enabled
@@ -538,5 +488,5 @@ async def upload_managed_document(
         filename=title or file.filename,
         file_type=file_ext,
         size=len(content),
-        message=f"File uploaded successfully with {file_classification.value} classification (mode: {storage_mode})"
+        message=f"File uploaded successfully with auto-classification: {file_classification.value} (mode: {storage_mode})"
     )

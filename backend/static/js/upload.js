@@ -2,6 +2,7 @@
 
 let currentFile = null;
 let currentFileId = null;
+const defaultClassification = window.defaultClassification || 'public_company';
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
@@ -20,6 +21,13 @@ function initializeUploadForm() {
     const uploadAnotherBtn = document.getElementById('uploadAnotherBtn');
     const summaryRendered = document.getElementById('documentSummaryRendered');
     const summarySource = document.getElementById('documentSummary');
+    const accessLevelDisplay = document.getElementById('accessLevelDisplay');
+    const accessLevelHidden = document.getElementById('accessLevel');
+
+    if (accessLevelDisplay && accessLevelHidden) {
+        accessLevelHidden.value = defaultClassification;
+        accessLevelDisplay.value = formatClassificationLabel(defaultClassification);
+    }
 
     // File input change
     fileInput.addEventListener('change', (e) => {
@@ -103,7 +111,7 @@ async function generateSummary(regenerate = false) {
         const formData = new FormData();
         formData.append('file', currentFile);
 
-        const uploadResponse = await fetch('/api/upload?classification=public_company', {
+        const uploadResponse = await fetch(`/api/upload?classification=${encodeURIComponent(defaultClassification)}`, {
             method: 'POST',
             body: formData
         });
@@ -149,7 +157,7 @@ async function handleUpload() {
 
     // Get form values
     const title = document.getElementById('documentTitle').value;
-    const accessLevel = document.getElementById('accessLevel').value;
+    const accessLevel = document.getElementById('accessLevel').value || defaultClassification;
     const storageMode = document.getElementById('storageMode').value;
     const autoDelete = document.getElementById('autoDelete').checked;
     const summarySource = document.getElementById('documentSummary');
@@ -236,7 +244,8 @@ function resetForm() {
     const uploadDetails = document.querySelector('.upload-details');
     const fileInput = document.getElementById('documentFile');
     const titleInput = document.getElementById('documentTitle');
-    const accessLevelSelect = document.getElementById('accessLevel');
+    const accessLevelHidden = document.getElementById('accessLevel');
+    const accessLevelDisplay = document.getElementById('accessLevelDisplay');
     const storageModeSelect = document.getElementById('storageMode');
     const autoDeleteCheckbox = document.getElementById('autoDelete');
     const summarySection = document.querySelector('.summary-section');
@@ -248,7 +257,8 @@ function resetForm() {
 
     fileInput.value = '';
     titleInput.value = '';
-    accessLevelSelect.selectedIndex = 0;
+    accessLevelHidden.value = defaultClassification;
+    accessLevelDisplay.value = formatClassificationLabel(defaultClassification);
     storageModeSelect.selectedIndex = 0;
     autoDeleteCheckbox.checked = false;
     summaryText.value = '';
@@ -279,6 +289,13 @@ function formatFileSize(bytes) {
     if (bytes < 1024) return bytes + ' B';
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function formatClassificationLabel(value) {
+    if (value === 'admin_only') return 'Admin Only';
+    if (value === 'management_only') return 'Management Only';
+    if (value === 'finance_only') return 'Finance Department Only';
+    return 'Public Company - All Employees';
 }
 
 function escapeHtml(text) {

@@ -89,6 +89,31 @@ body {
     font-size: 0.82rem;
 }
 
+.user-pill {
+    border: 1px solid #2f2d2d;
+    background: #171615;
+    color: var(--text-main);
+    border-radius: 999px;
+    padding: 0.35rem 0.8rem;
+    font-size: 0.82rem;
+    text-transform: capitalize;
+}
+
+.logout-link {
+    color: #ffb996;
+    border: 1px solid rgba(255, 185, 150, 0.28);
+    border-radius: 8px;
+    text-decoration: none;
+    padding: 0.38rem 0.7rem;
+    font-size: 0.84rem;
+}
+
+.logout-link:hover {
+    color: #ffd4bf;
+    border-color: rgba(255, 185, 150, 0.5);
+    background: rgba(255, 185, 150, 0.08);
+}
+
 .workspace-grid {
     display: grid;
     grid-template-columns: 300px 10px 1fr 10px 360px;

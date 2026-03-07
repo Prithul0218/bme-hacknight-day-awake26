@@ -5,6 +5,8 @@ Extensible for future authentication/authorization enhancements.
 """
 
 from backend.models.schemas import User, Role, FileMetadata, FileClassification
+from backend.services.auth_service import get_user_by_id
+from fastapi import Request, HTTPException
 
 
 def can_user_access_file(user: User, file_metadata: FileMetadata) -> bool:
@@ -52,7 +54,7 @@ def can_user_access_file(user: User, file_metadata: FileMetadata) -> bool:
     return False
 
 
-def get_accessible_user_context() -> dict:
+def get_accessible_user_context(request: Request) -> dict:
     """
     Returns user context for the current session.
     This is a placeholder that will be replaced with actual auth (JWT, session, etc).
@@ -63,19 +65,31 @@ def get_accessible_user_context() -> dict:
     Returns:
         dict: User context with user_id, name, role, department
     """
-    # TODO: Replace with actual JWT/session authentication
-    # For now, default to an employee user
-    # This can be overridden by:
-    # 1. Environment variables
-    # 2. Request headers (X-User-ID, X-User-Role)
-    # 3. JWT token validation
-    
+    user_id = request.cookies.get("auth_user_id")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    user = get_user_by_id(user_id)
+    if not user or not bool(user.get("is_active", True)):
+        raise HTTPException(status_code=401, detail="Invalid or inactive user")
+
     return {
-        "user_id": "user_default",
-        "name": "Current User",
-        "role": Role.EMPLOYEE,
-        "department": None
+        "user_id": user.get("user_id"),
+        "name": user.get("name"),
+        "role": user.get("role", Role.EMPLOYEE.value),
+        "department": user.get("department"),
     }
+
+
+def get_default_classification_for_role(role: Role) -> FileClassification:
+    """Map role to the default classification used for automatic access-level selection."""
+    if role == Role.ADMIN:
+        return FileClassification.ADMIN_ONLY
+    if role == Role.MANAGEMENT:
+        return FileClassification.MANAGEMENT_ONLY
+    if role == Role.FINANCE:
+        return FileClassification.FINANCE_ONLY
+    return FileClassification.PUBLIC_COMPANY
 
 
 def build_user_from_context(user_context: dict) -> User:

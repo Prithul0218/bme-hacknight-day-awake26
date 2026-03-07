@@ -26,6 +26,21 @@ FinanceBuddy uses AI to:
 
 ## ✅ Implemented Features
 
+### 🔐 Authentication System
+- **Cookie-Based Sessions**: Secure httponly cookies with 8-hour expiry
+- **Login/Logout Flow**: Complete authentication with redirect protection
+- **JSON User Storage**: Persistent user database at `backend/data/users.json`
+- **Protected Routes**: Unauthenticated users redirected to `/login`
+- **Auto-Classification**: Access levels automatically assigned based on user role
+
+#### Demo User Accounts (All passwords: `1234`)
+| Email | Role | Auto-Classification | Access Level |
+|-------|------|---------------------|-------------|
+| admin@financebuddy.local | Admin | admin_only | Full access to all documents |
+| management@financebuddy.local | Management | management_only | Management & public docs |
+| finance@financebuddy.local | Finance | finance_only | Finance & public docs |
+| employee@financebuddy.local | Employee | public_company | Public docs only |
+
 ### 🔐 Access Control System
 - **4-Level Classification**:
   - `public_company` - All employees
@@ -93,9 +108,9 @@ FinanceBuddy uses AI to:
 
 ### Medium Priority  
 - [ ] Auto-delete scheduler (7-day TTL)
-- [ ] User authentication (JWT/sessions)
 - [ ] Database integration (PostgreSQL/MongoDB)
 - [ ] File management UI (view, edit, delete)
+- [ ] Password hashing (currently plain text for demo)
 
 ### Low Priority
 - [ ] Analytics dashboard
@@ -164,21 +179,40 @@ echo "GEMINI_API_KEY=your_api_key_here" > .env
 
 5. **Run the server**
 ```bash
-/Users/prithul0218/Documents/GitHub/bme-hacknight-day-awake26/venv/bin/python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+# Or with full path:
+# /path/to/venv/bin/python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 6. **Access the application**
+- Login page: http://localhost:8000/login
 - Main interface: http://localhost:8000
 - Upload manager: http://localhost:8000/upload
+
+7. **Login with demo account**
+- Use any of the demo emails (see Authentication section)
+- Password: `1234` (for all demo accounts)
+- Your access level will be automatically set based on your role
 
 ---
 
 ## 📚 Usage Guide
 
+### Login
+1. Navigate to http://localhost:8000
+2. You'll be redirected to http://localhost:8000/login
+3. Enter one of the demo emails:
+   - `admin@financebuddy.local` (full access)
+   - `management@financebuddy.local` (management + public)
+   - `finance@financebuddy.local` (finance + public)
+   - `employee@financebuddy.local` (public only)
+4. Enter password: `1234`
+5. Click "Sign In"
+
 ### Upload a Document
 1. Go to http://localhost:8000/upload
 2. Drag & drop PDF/Excel/CSV file
-3. Select access level (e.g., "Finance Only")
+3. Access level is **automatically set** based on your login role
 4. Choose storage mode:
    - **Full Document** - Store entire document
    - **AI Summary Only** - Store only summary (saves storage)
@@ -216,9 +250,15 @@ echo "GEMINI_API_KEY=your_api_key_here" > .env
 - `POST /api/chat` - Chat-based Q&A
 - `POST /api/studio` - Generate content assets
 
+### Authentication
+- `GET /login` - Login page
+- `POST /login` - Login form submission
+- `GET /logout` - Logout and clear session
+- `GET /api/auth/me` - Get current user info
+
 ### UI
-- `GET /` - Main application interface
-- `GET /upload` - Upload manager page
+- `GET /` - Main application interface (requires auth)
+- `GET /upload` - Upload manager page (requires auth)
 
 ---
 
@@ -234,20 +274,25 @@ bme-hacknight-day-awake26/
 │   │   ├── document_processor.py    # Multi-format processing
 │   │   ├── rag_service.py           # Semantic search & embeddings
 │   │   ├── report_generator.py      # Department reports
-│   │   └── access_control.py        # Permission enforcement
+│   │   ├── access_control.py        # Permission enforcement
+│   │   └── auth_service.py          # User authentication & sessions
+│   ├── data/
+│   │   └── users.json               # User database (demo accounts)
 │   ├── models/
 │   │   └── schemas.py               # Pydantic models
 │   ├── prompts/
 │   │   └── templates.py             # Centralized AI prompts
 │   ├── templates/
 │   │   ├── index.html               # Main interface
-│   │   └── upload.html              # Upload manager
+│   │   ├── upload.html              # Upload manager
+│   │   └── login.html               # Login page
 │   └── static/
 │       ├── css/
-│       │   ├── styles.css           # Main styles
-│       │   └── upload.css           # Upload page styles
+│       │   ├── style.css            # Main styles
+│       │   ├── upload.css           # Upload page styles
+│       │   └── login.css            # Login page styles
 │       └── js/
-│           ├── app.js               # Main app logic
+│           ├── main.js               # Main app logic
 │           └── upload.js            # Upload page logic
 ├── uploads/                         # Uploaded documents storage
 ├── requirements.txt                 # Python dependencies
@@ -291,10 +336,11 @@ python backend/test_rag.py
 - **Workaround**: None currently
 - **Fix**: Migrate to PostgreSQL/MongoDB (planned)
 
-### 3. No Persistent Authentication
-- **Issue**: Uses headers for user context (testing only)
-- **Impact**: No real security in current implementation
-- **Fix**: Implement JWT/session-based auth (planned)
+### 3. Plain Text Passwords (Demo Only)
+- **Issue**: Passwords stored in plain text in users.json
+- **Impact**: Not production-ready, demo purposes only
+- **Fix**: Implement password hashing (bcrypt/argon2) before production
+- **Status**: Planned for production deployment
 
 ---
 
